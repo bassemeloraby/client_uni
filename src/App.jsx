@@ -1,4 +1,17 @@
+import { HomeLayout, Error } from "./pages";
+
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+
+
+const router = createBrowserRouter([{
+  path: "/",
+  element: <HomeLayout />,
+  errorElement: <Error />,
+}]);
+
+
+
 const App = () => {
-  return <h1 className='text-7xl font-bold underline'>Tailwind project</h1>;
+  return <RouterProvider router={router} />;
 };
 export default App;
