@@ -1,12 +1,16 @@
 import { HomeLayout, Error,
   Login,
   Register,
-  Pharmacies,
+  PharmaciesPage,
+  CreatePharmacy,
   Landing
  } from "./pages";
 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
+
+// Import loaders and actions directly
+import { loader as pharmaciesLoader } from "./pages/Pharmacies/Pharmacies.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -19,7 +23,12 @@ const router = createBrowserRouter([{
     },
     {
       path: "pharmacies",
-      element: <Pharmacies />,
+      element: <PharmaciesPage />,
+      loader: pharmaciesLoader,
+    },
+    {
+      path: "pharmacies/create",
+      element: <CreatePharmacy />,
     },
   ],
 },
