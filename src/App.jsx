@@ -3,6 +3,7 @@ import { HomeLayout, Error,
   Register,
   PharmaciesPage,
   CreatePharmacy,
+  EditPharmacy,
   SinglePharmacy,
   Landing
  } from "./pages";
@@ -13,6 +14,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 // Import loaders and actions directly
 import { loader as pharmaciesLoader } from "./pages/Pharmacies/Pharmacies.jsx";
 import { loader as singlePharmacyLoader } from "./pages/Pharmacies/SinglePharmacy.jsx";
+import { loader as editPharmacyLoader } from "./pages/Pharmacies/EditPharmacy.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -31,6 +33,11 @@ const router = createBrowserRouter([{
     {
       path: "pharmacies/create",
       element: <CreatePharmacy />,
+    },
+    {
+      path: "pharmacies/:id/edit",
+      element: <EditPharmacy />,
+      loader: editPharmacyLoader,
     },
     {
       path: "pharmacies/:id",

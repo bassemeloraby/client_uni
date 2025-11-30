@@ -9,6 +9,7 @@ import {
   FaTimesCircle,
   FaArrowLeft,
   FaGlobe,
+  FaEdit,
 } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 
@@ -48,13 +49,20 @@ const SinglePharmacy = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Link
           to="/pharmacies"
-          className="btn btn-ghost gap-2 mb-4"
+          className="btn btn-ghost gap-2"
         >
           <FaArrowLeft className="h-4 w-4" />
           Back to Pharmacies
+        </Link>
+        <Link
+          to={`/pharmacies/${pharmacy._id}/edit`}
+          className="btn btn-primary gap-2"
+        >
+          <FaEdit className="h-4 w-4" />
+          Edit Pharmacy
         </Link>
       </div>
 
