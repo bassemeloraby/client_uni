@@ -37,7 +37,11 @@ const Pharmacies = () => {
       {pharmacies && pharmacies.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pharmacies.map((pharmacy) => (
-            <div key={pharmacy._id} className="card bg-base-100 shadow-xl">
+            <Link
+              key={pharmacy._id}
+              to={`/pharmacies/${pharmacy._id}`}
+              className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+            >
               <div className="card-body">
                 <div className="flex items-start justify-between mb-2">
                   <h2 className="card-title text-2xl">{pharmacy.name}</h2>
@@ -112,7 +116,7 @@ const Pharmacies = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
