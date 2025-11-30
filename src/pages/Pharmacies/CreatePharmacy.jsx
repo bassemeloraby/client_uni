@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 import { toast } from 'react-toastify';
 
 const CreatePharmacy = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: {
@@ -74,6 +76,54 @@ const CreatePharmacy = () => {
         [name]: value ? parseFloat(value) : '',
       },
     }));
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData((prev) => ({
+          ...prev,
+          location: {
+            latitude: parseFloat(latitude.toFixed(6)),
+            longitude: parseFloat(longitude.toFixed(6)),
+          },
+        }));
+        toast.success('Location retrieved successfully!');
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        let errorMessage = 'Failed to get your location. ';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Please allow location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'Location request timed out.';
+            break;
+          default:
+            errorMessage += 'An unknown error occurred.';
+            break;
+        }
+        toast.error(errorMessage);
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -346,7 +396,27 @@ const CreatePharmacy = () => {
           {/* Location (Optional) */}
           <div className="card bg-base-200 shadow-md">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">Location (Optional)</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="card-title text-2xl">Location (Optional)</h2>
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  disabled={isGettingLocation}
+                  className="btn btn-sm btn-primary gap-2"
+                >
+                  {isGettingLocation ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Getting...
+                    </>
+                  ) : (
+                    <>
+                      <FaMapMarkerAlt className="h-4 w-4" />
+                      Get GPS Location
+                    </>
+                  )}
+                </button>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-control">
