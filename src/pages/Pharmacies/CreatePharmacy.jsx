@@ -8,6 +8,7 @@ const CreatePharmacy = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isGettingAddress, setIsGettingAddress] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: {
@@ -78,6 +79,62 @@ const CreatePharmacy = () => {
     }));
   };
 
+  const reverseGeocode = async (latitude, longitude, showToast = true) => {
+    try {
+      setIsGettingAddress(true);
+      // Using OpenStreetMap Nominatim API (free, no API key required)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'UNI-Pharmacy-App', // Required by Nominatim
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch address');
+      }
+
+      const data = await response.json();
+      
+      if (data && data.address) {
+        const address = data.address;
+        setFormData((prev) => ({
+          ...prev,
+          address: {
+            street: address.road || address.pedestrian || address.footway || address.path || '',
+            city: address.city || address.town || address.village || address.municipality || '',
+            state: address.state || address.region || '',
+            zipCode: address.postcode || '',
+            country: address.country || prev.address.country || 'Egypt',
+          },
+        }));
+        if (showToast) {
+          toast.success('Address information retrieved successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      if (showToast) {
+        toast.warning('Could not retrieve address from location. Please fill manually.');
+      }
+    } finally {
+      setIsGettingAddress(false);
+    }
+  };
+
+  const getAddressFromCoordinates = () => {
+    const { latitude, longitude } = formData.location;
+    
+    if (!latitude || !longitude) {
+      toast.error('Please enter both latitude and longitude first');
+      return;
+    }
+
+    reverseGeocode(latitude, longitude, true);
+  };
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -87,16 +144,24 @@ const CreatePharmacy = () => {
     setIsGettingLocation(true);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
+        const lat = parseFloat(latitude.toFixed(6));
+        const lon = parseFloat(longitude.toFixed(6));
+        
         setFormData((prev) => ({
           ...prev,
           location: {
-            latitude: parseFloat(latitude.toFixed(6)),
-            longitude: parseFloat(longitude.toFixed(6)),
+            latitude: lat,
+            longitude: lon,
           },
         }));
+        
         toast.success('Location retrieved successfully!');
+        
+        // Get address from coordinates
+        await reverseGeocode(lat, lon, false);
+        
         setIsGettingLocation(false);
       },
       (error) => {
@@ -449,6 +514,29 @@ const CreatePharmacy = () => {
                   />
                 </div>
               </div>
+              
+              {formData.location.latitude && formData.location.longitude && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={getAddressFromCoordinates}
+                    disabled={isGettingAddress}
+                    className="btn btn-sm btn-outline btn-primary gap-2 w-full"
+                  >
+                    {isGettingAddress ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Getting Address...
+                      </>
+                    ) : (
+                      <>
+                        <FaMapMarkerAlt className="h-4 w-4" />
+                        Get Address from Coordinates
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
