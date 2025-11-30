@@ -174,6 +174,66 @@ const CreatePharmacy = () => {
     reverseGeocode(latitude, longitude, true);
   };
 
+  const geocodeAddress = async () => {
+    const { street, city, state, zipCode, country } = formData.address;
+    
+    if (!street || !city) {
+      toast.error('Please enter at least street address and city first');
+      return;
+    }
+
+    try {
+      setIsGettingLocation(true);
+      
+      // Build address string for geocoding
+      const addressParts = [street, city];
+      if (state) addressParts.push(state);
+      if (zipCode) addressParts.push(zipCode);
+      if (country) addressParts.push(country);
+      
+      const addressString = addressParts.join(', ');
+      
+      // Using OpenStreetMap Nominatim API for forward geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'UNI-Pharmacy-App', // Required by Nominatim
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch coordinates');
+      }
+
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(parseFloat(result.lat).toFixed(6));
+        const lon = parseFloat(parseFloat(result.lon).toFixed(6));
+        
+        setFormData((prev) => ({
+          ...prev,
+          location: {
+            latitude: lat,
+            longitude: lon,
+          },
+        }));
+        
+        toast.success('Coordinates retrieved from address successfully!');
+      } else {
+        toast.warning('Could not find coordinates for this address. Please enter coordinates manually.');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error('Failed to get coordinates from address. Please enter coordinates manually.');
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -502,24 +562,37 @@ const CreatePharmacy = () => {
             <div className="card-body">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="card-title text-2xl">Location (Optional)</h2>
-                <button
-                  type="button"
-                  onClick={getCurrentLocation}
-                  disabled={isGettingLocation}
-                  className="btn btn-sm btn-primary gap-2"
-                >
-                  {isGettingLocation ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Getting...
-                    </>
-                  ) : (
-                    <>
-                      <FaMapMarkerAlt className="h-4 w-4" />
-                      Get GPS Location
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={geocodeAddress}
+                    disabled={isGettingLocation || !formData.address.street || !formData.address.city}
+                    className="btn btn-sm btn-primary gap-2"
+                    title="Get coordinates from the address above"
+                  >
+                    {isGettingLocation ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Getting...
+                      </>
+                    ) : (
+                      <>
+                        <FaMapMarkerAlt className="h-4 w-4" />
+                        Get from Address
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    className="btn btn-sm btn-outline btn-primary gap-2"
+                    title="Get your current GPS location"
+                  >
+                    <FaMapMarkerAlt className="h-4 w-4" />
+                    My Location
+                  </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
