@@ -100,18 +100,57 @@ const CreatePharmacy = () => {
       
       if (data && data.address) {
         const address = data.address;
+        
+        // Build complete street address with house number, building, and road name
+        let streetAddress = '';
+        const streetParts = [];
+        
+        // Add house number if available
+        if (address.house_number) {
+          streetParts.push(address.house_number);
+        }
+        
+        // Add building name if available
+        if (address.building) {
+          streetParts.push(address.building);
+        }
+        
+        // Add road name (most common)
+        if (address.road) {
+          streetParts.push(address.road);
+        } else if (address.pedestrian) {
+          streetParts.push(address.pedestrian);
+        } else if (address.footway) {
+          streetParts.push(address.footway);
+        } else if (address.path) {
+          streetParts.push(address.path);
+        } else if (address.street) {
+          streetParts.push(address.street);
+        } else if (address.residential) {
+          streetParts.push(address.residential);
+        }
+        
+        // Combine all street parts
+        streetAddress = streetParts.join(' ').trim();
+        
+        // If still empty, try using the display name as fallback
+        if (!streetAddress && data.display_name) {
+          const displayParts = data.display_name.split(',');
+          streetAddress = displayParts[0] || '';
+        }
+        
         setFormData((prev) => ({
           ...prev,
           address: {
-            street: address.road || address.pedestrian || address.footway || address.path || '',
-            city: address.city || address.town || address.village || address.municipality || '',
-            state: address.state || address.region || '',
+            street: streetAddress,
+            city: address.city || address.town || address.village || address.municipality || address.county || '',
+            state: address.state || address.region || address.province || '',
             zipCode: address.postcode || '',
             country: address.country || prev.address.country || 'Egypt',
           },
         }));
         if (showToast) {
-          toast.success('Address information retrieved successfully!');
+          toast.success('Street address and location information retrieved successfully!');
         }
       }
     } catch (error) {
