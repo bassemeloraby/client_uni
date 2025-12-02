@@ -1,6 +1,6 @@
 import React from 'react'
 import { useLoaderData, Link } from 'react-router-dom';
-import { FaPlus, FaUser, FaEnvelope, FaPhone, FaCheckCircle, FaTimesCircle, FaShieldAlt } from 'react-icons/fa';
+import { FaPlus, FaUser, FaEnvelope, FaPhone, FaCheckCircle, FaTimesCircle, FaShieldAlt, FaWhatsapp } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 const url = "users";
 
@@ -90,6 +90,22 @@ const Users = () => {
                     <div className="flex items-center gap-2">
                       <FaPhone className="text-primary" />
                       <span className="text-sm">{user.phone}</span>
+                    </div>
+                  )}
+
+                  {/* WhatsApp */}
+                  {user.whatsapp && (
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://wa.me/${user.whatsapp.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 hover:text-green-500 transition-colors"
+                      >
+                        <FaWhatsapp className="text-green-500" />
+                        <span className="text-sm">{user.whatsapp}</span>
+                      </a>
                     </div>
                   )}
 

@@ -10,6 +10,7 @@ import {
   FaArrowLeft,
   FaEdit,
   FaShieldAlt,
+  FaWhatsapp,
 } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 
@@ -134,6 +135,20 @@ const SingleUser = () => {
                     className="text-lg hover:text-primary transition-colors"
                   >
                     {user.phone}
+                  </a>
+                </div>
+              )}
+              {user.whatsapp && (
+                <div className="flex items-center gap-3">
+                  <FaWhatsapp className="text-green-500 text-xl" />
+                  <a
+                    href={`https://wa.me/${user.whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-lg hover:text-green-500 transition-colors flex items-center gap-2"
+                  >
+                    {user.whatsapp}
+                    <span className="text-xs text-base-content/60">(Click to chat on WhatsApp)</span>
                   </a>
                 </div>
               )}

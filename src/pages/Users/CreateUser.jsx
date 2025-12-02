@@ -14,6 +14,7 @@ const CreateUser = () => {
     lastName: '',
     role: 'user',
     phone: '',
+    whatsapp: '',
     address: {
       street: '',
       city: '',
@@ -175,17 +176,32 @@ const CreateUser = () => {
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-semibold">Phone</span>
+                    <span className="label-text font-semibold">Phone *</span>
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    required
                     className="input input-bordered w-full"
                     placeholder="Enter phone number"
                   />
                 </div>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">WhatsApp Number</span>
+                </label>
+                <input
+                  type="tel"
+                  name="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Enter WhatsApp number (optional)"
+                />
               </div>
 
               <div className="form-control">
