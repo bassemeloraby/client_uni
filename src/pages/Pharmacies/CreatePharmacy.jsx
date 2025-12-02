@@ -11,6 +11,7 @@ const CreatePharmacy = () => {
   const [isGettingAddress, setIsGettingAddress] = useState(false);
   const [supervisors, setSupervisors] = useState([]);
   const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false);
+  const [workingDaysMode, setWorkingDaysMode] = useState('everyday'); // 'everyday' or 'custom'
   const [formData, setFormData] = useState({
     name: '',
     address: {
@@ -39,6 +40,19 @@ const CreatePharmacy = () => {
   });
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Update days when working days mode changes
+  useEffect(() => {
+    if (workingDaysMode === 'everyday') {
+      setFormData((prev) => ({
+        ...prev,
+        workingHours: {
+          ...prev.workingHours,
+          days: [...daysOfWeek],
+        },
+      }));
+    }
+  }, [workingDaysMode]);
 
   // Fetch pharmacy supervisors
   useEffect(() => {
@@ -581,6 +595,34 @@ const CreatePharmacy = () => {
                 <label className="label">
                   <span className="label-text font-semibold">Working Days</span>
                 </label>
+                
+                {/* Radio buttons for working days mode */}
+                <div className="flex gap-6 mb-4">
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="workingDaysMode"
+                      value="everyday"
+                      checked={workingDaysMode === 'everyday'}
+                      onChange={(e) => setWorkingDaysMode(e.target.value)}
+                      className="radio radio-primary"
+                    />
+                    <span className="label-text ml-2">Every Day</span>
+                  </label>
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="workingDaysMode"
+                      value="custom"
+                      checked={workingDaysMode === 'custom'}
+                      onChange={(e) => setWorkingDaysMode(e.target.value)}
+                      className="radio radio-primary"
+                    />
+                    <span className="label-text ml-2">Custom</span>
+                  </label>
+                </div>
+
+                {/* Day checkboxes - only enabled when custom mode is selected */}
                 <div className="flex flex-wrap gap-2">
                   {daysOfWeek.map((day) => (
                     <label key={day} className="label cursor-pointer">
@@ -588,6 +630,7 @@ const CreatePharmacy = () => {
                       <input
                         type="checkbox"
                         checked={formData.workingHours.days.includes(day)}
+                        disabled={workingDaysMode === 'everyday'}
                         onChange={() => {
                           const newDays = formData.workingHours.days.includes(day)
                             ? formData.workingHours.days.filter((d) => d !== day)
