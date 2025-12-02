@@ -30,6 +30,32 @@ const Users = () => {
     return roleColors[role] || 'badge-ghost';
   };
 
+  // Format WhatsApp number for link
+  const formatWhatsAppNumber = (number) => {
+    if (!number) return '';
+    // Remove all non-numeric characters
+    let cleaned = number.replace(/[^0-9]/g, '');
+    
+    // If number starts with 0, replace with 966 (Saudi Arabia country code)
+    if (cleaned.startsWith('0')) {
+      cleaned = '966' + cleaned.substring(1);
+    }
+    // If number already starts with country code (966), keep it
+    // If it doesn't start with country code and doesn't start with 0, check if it needs country code
+    if (!cleaned.startsWith('966') && cleaned.length > 0) {
+      // If it's a local Saudi number (9 digits starting with 5), add 966
+      if (cleaned.length === 9 && cleaned.startsWith('5')) {
+        cleaned = '966' + cleaned;
+      }
+      // If it's a local Saudi number (10 digits starting with 05), remove leading 0 and add 966
+      if (cleaned.length === 10 && cleaned.startsWith('05')) {
+        cleaned = '966' + cleaned.substring(1);
+      }
+    }
+    
+    return cleaned;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -97,7 +123,7 @@ const Users = () => {
                   {user.whatsapp && (
                     <div className="flex items-center gap-2">
                       <a
-                        href={`https://wa.me/${user.whatsapp.replace(/[^0-9]/g, '')}`}
+                        href={`https://wa.me/${formatWhatsAppNumber(user.whatsapp)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
