@@ -52,8 +52,7 @@ const Navbar = () => {
                 to="/"
                 className="btn btn-primary text-2xl font-bold tracking-wide hover:scale-105 transition-transform duration-200 shadow-lg"
               >
-                Mederma
-              </NavLink>
+                Uni Pharmacy              </NavLink>
             </div>
 
             <div className="navbar-center hidden lg:flex">
@@ -68,8 +67,7 @@ const Navbar = () => {
                         <NavLink
                           to={firstLink.link}
                           className={({ isActive }) =>
-                            `px-3 py-2 rounded-md transition-colors duration-200 ${
-                              isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                            `px-3 py-2 rounded-md transition-colors duration-200 ${isActive ? "bg-primary text-white" : "hover:bg-primary/10"
                             }`
                           }
                           onClick={handleCloseDropdown}
@@ -84,9 +82,8 @@ const Navbar = () => {
                     <li key={section.id}>
                       <button
                         type="button"
-                        className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors duration-200 ${
-                          activeSectionId === section.id ? "bg-primary/10" : "hover:bg-primary/10"
-                        }`}
+                        className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors duration-200 ${activeSectionId === section.id ? "bg-primary/10" : "hover:bg-primary/10"
+                          }`}
                         onMouseEnter={() => setActiveSectionId(section.id)}
                         onFocus={() => setActiveSectionId(section.id)}
                         onClick={() => handleSectionToggle(section.id)}
@@ -94,9 +91,8 @@ const Navbar = () => {
                         aria-haspopup="true"
                       >
                         {section.text}
-                        <FaChevronDown className={`text-xs mt-0.5 transition-transform ${
-                          activeSectionId === section.id ? "rotate-180" : ""
-                        }`} />
+                        <FaChevronDown className={`text-xs mt-0.5 transition-transform ${activeSectionId === section.id ? "rotate-180" : ""
+                          }`} />
                       </button>
                     </li>
                   );
@@ -121,8 +117,7 @@ const Navbar = () => {
                     key={subLink.id || subLink.link}
                     to={subLink.link}
                     className={({ isActive }) =>
-                      `px-3 py-2 rounded-md text-sm transition-colors duration-200 ${
-                        isActive ? "bg-primary text-white" : "hover:bg-primary/10"
+                      `px-3 py-2 rounded-md text-sm transition-colors duration-200 ${isActive ? "bg-primary text-white" : "hover:bg-primary/10"
                       }`
                     }
                     onClick={handleCloseDropdown}
