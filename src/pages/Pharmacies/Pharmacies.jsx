@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useLoaderData, Link } from 'react-router-dom';
-import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList } from 'react-icons/fa';
+import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList, FaSearch } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 const url = "pharmacies";
 
@@ -21,6 +21,12 @@ export const loader = async ({ request }) => {
 const Pharmacies = () => {
   const pharmacies = useLoaderData();
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list'
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filter pharmacies by name
+  const filteredPharmacies = pharmacies.filter((pharmacy) =>
+    pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -54,10 +60,29 @@ const Pharmacies = () => {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="form-control">
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Search by pharmacy name..."
+              className="input input-bordered w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button className="btn btn-square">
+              <FaSearch className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {pharmacies && pharmacies.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pharmacies.map((pharmacy) => (
+        filteredPharmacies.length > 0 ? (
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPharmacies.map((pharmacy) => (
               <Link
                 key={pharmacy._id}
                 to={`/pharmacies/${pharmacy._id}`}
@@ -140,9 +165,9 @@ const Pharmacies = () => {
               </Link>
             ))}
           </div>
-        ) : (
-          <div className="space-y-4">
-            {pharmacies.map((pharmacy) => (
+          ) : (
+            <div className="space-y-4">
+              {filteredPharmacies.map((pharmacy) => (
               <Link
                 key={pharmacy._id}
                 to={`/pharmacies/${pharmacy._id}`}
@@ -231,7 +256,28 @@ const Pharmacies = () => {
                   </div>
                 </div>
               </Link>
-            ))}
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-2xl text-base-content/70 mb-4">
+              {searchTerm ? `No pharmacies found matching "${searchTerm}"` : 'No pharmacies found'}
+            </p>
+            {searchTerm && (
+              <button
+                className="btn btn-outline mb-4"
+                onClick={() => setSearchTerm('')}
+              >
+                Clear Search
+              </button>
+            )}
+            {!searchTerm && (
+              <Link to="/pharmacies/create" className="btn btn-primary gap-2">
+                <FaPlus className="h-5 w-5" />
+                Create Your First Pharmacy
+              </Link>
+            )}
           </div>
         )
       ) : (
