@@ -12,6 +12,8 @@ import { HomeLayout, Error,
 } from "./pages";
 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import AdminRoute from './components/AdminRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 // Import loaders and actions directly
@@ -33,40 +35,72 @@ const router = createBrowserRouter([{
     },
     {
       path: "pharmacies",
-      element: <PharmaciesPage />,
+      element: (
+        <ProtectedRoute>
+          <PharmaciesPage />
+        </ProtectedRoute>
+      ),
       loader: pharmaciesLoader,
     },
     {
       path: "pharmacies/create",
-      element: <CreatePharmacy />,
+      element: (
+        <ProtectedRoute>
+          <CreatePharmacy />
+        </ProtectedRoute>
+      ),
     },
     {
       path: "pharmacies/:id/edit",
-      element: <EditPharmacy />,
+      element: (
+        <ProtectedRoute>
+          <EditPharmacy />
+        </ProtectedRoute>
+      ),
       loader: editPharmacyLoader,
     },
     {
       path: "pharmacies/:id",
-      element: <SinglePharmacy />,
+      element: (
+        <ProtectedRoute>
+          <SinglePharmacy />
+        </ProtectedRoute>
+      ),
       loader: singlePharmacyLoader,
     },
     {
       path: "users",
-      element: <UsersPage />,
+      element: (
+        <AdminRoute>
+          <UsersPage />
+        </AdminRoute>
+      ),
       loader: usersLoader,
     },
     {
       path: "users/create",
-      element: <CreateUser />,
+      element: (
+        <AdminRoute>
+          <CreateUser />
+        </AdminRoute>
+      ),
     },
     {
       path: "users/:id/edit",
-      element: <EditUser />,
+      element: (
+        <AdminRoute>
+          <EditUser />
+        </AdminRoute>
+      ),
       loader: editUserLoader,
     },
     {
       path: "users/:id",
-      element: <SingleUser />,
+      element: (
+        <AdminRoute>
+          <SingleUser />
+        </AdminRoute>
+      ),
       loader: singleUserLoader,
     },
   ],
