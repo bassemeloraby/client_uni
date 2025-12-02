@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { customFetch } from '../../utils';
@@ -9,6 +9,8 @@ const CreatePharmacy = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isGettingAddress, setIsGettingAddress] = useState(false);
+  const [supervisors, setSupervisors] = useState([]);
+  const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: {
@@ -33,9 +35,30 @@ const CreatePharmacy = () => {
     },
     isActive: true,
     description: '',
+    supervisor: '',
   });
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Fetch pharmacy supervisors
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        setIsLoadingSupervisors(true);
+        const response = await customFetch.get('users?role=pharmacy supervisor');
+        if (response.data.success) {
+          setSupervisors(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching supervisors:', error);
+        toast.error('Failed to load pharmacy supervisors');
+      } finally {
+        setIsLoadingSupervisors(false);
+      }
+    };
+
+    fetchSupervisors();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -300,6 +323,10 @@ const CreatePharmacy = () => {
       if (!submitData.location.latitude || !submitData.location.longitude) {
         delete submitData.location;
       }
+      // Remove supervisor if empty
+      if (!submitData.supervisor) {
+        delete submitData.supervisor;
+      }
 
       const response = await customFetch.post('pharmacies', submitData);
 
@@ -369,6 +396,31 @@ const CreatePharmacy = () => {
                     className="toggle toggle-primary"
                   />
                 </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">Pharmacy Supervisor</span>
+                </label>
+                <select
+                  name="supervisor"
+                  value={formData.supervisor}
+                  onChange={handleChange}
+                  className="select select-bordered w-full"
+                  disabled={isLoadingSupervisors}
+                >
+                  <option value="">Select a supervisor (optional)</option>
+                  {supervisors.map((supervisor) => (
+                    <option key={supervisor._id} value={supervisor._id}>
+                      {supervisor.firstName} {supervisor.lastName} ({supervisor.email})
+                    </option>
+                  ))}
+                </select>
+                {isLoadingSupervisors && (
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/70">Loading supervisors...</span>
+                  </label>
+                )}
               </div>
             </div>
           </div>

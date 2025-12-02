@@ -23,6 +23,8 @@ const EditPharmacy = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isGettingAddress, setIsGettingAddress] = useState(false);
+  const [supervisors, setSupervisors] = useState([]);
+  const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: {
@@ -47,7 +49,28 @@ const EditPharmacy = () => {
     },
     isActive: true,
     description: '',
+    supervisor: '',
   });
+
+  // Fetch pharmacy supervisors
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        setIsLoadingSupervisors(true);
+        const response = await customFetch.get('users?role=pharmacy supervisor');
+        if (response.data.success) {
+          setSupervisors(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching supervisors:', error);
+        toast.error('Failed to load pharmacy supervisors');
+      } finally {
+        setIsLoadingSupervisors(false);
+      }
+    };
+
+    fetchSupervisors();
+  }, []);
 
   // Populate form with existing pharmacy data
   useEffect(() => {
@@ -76,6 +99,7 @@ const EditPharmacy = () => {
         },
         isActive: pharmacy.isActive !== undefined ? pharmacy.isActive : true,
         description: pharmacy.description || '',
+        supervisor: pharmacy.supervisor?._id || pharmacy.supervisor || '',
       });
     }
   }, [pharmacy]);
@@ -345,6 +369,10 @@ const EditPharmacy = () => {
       if (!submitData.location.latitude || !submitData.location.longitude) {
         delete submitData.location;
       }
+      // Remove supervisor if empty
+      if (!submitData.supervisor) {
+        delete submitData.supervisor;
+      }
 
       const response = await customFetch.put(`pharmacies/${pharmacy._id}`, submitData);
 
@@ -424,6 +452,31 @@ const EditPharmacy = () => {
                     className="toggle toggle-primary"
                   />
                 </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">Pharmacy Supervisor</span>
+                </label>
+                <select
+                  name="supervisor"
+                  value={formData.supervisor}
+                  onChange={handleChange}
+                  className="select select-bordered w-full"
+                  disabled={isLoadingSupervisors}
+                >
+                  <option value="">Select a supervisor (optional)</option>
+                  {supervisors.map((supervisor) => (
+                    <option key={supervisor._id} value={supervisor._id}>
+                      {supervisor.firstName} {supervisor.lastName} ({supervisor.email})
+                    </option>
+                  ))}
+                </select>
+                {isLoadingSupervisors && (
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/70">Loading supervisors...</span>
+                  </label>
+                )}
               </div>
             </div>
           </div>

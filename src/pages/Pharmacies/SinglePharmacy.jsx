@@ -267,6 +267,71 @@ const SinglePharmacy = () => {
             </div>
           )}
 
+          {/* Supervisor Section */}
+          {pharmacy.supervisor && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <FaUser className="text-primary" />
+                Pharmacy Supervisor
+              </h2>
+              <div className="bg-base-200 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="avatar placeholder">
+                    <div className="bg-primary text-primary-content rounded-full w-12">
+                      <span className="text-lg">
+                        {pharmacy.supervisor.firstName?.[0]?.toUpperCase() || 'S'}
+                        {pharmacy.supervisor.lastName?.[0]?.toUpperCase() || ''}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">
+                      {pharmacy.supervisor.firstName} {pharmacy.supervisor.lastName}
+                    </h3>
+                    <p className="text-sm text-base-content/70">@{pharmacy.supervisor.username}</p>
+                    <div className="mt-2 space-y-1">
+                      {pharmacy.supervisor.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <FaEnvelope className="text-primary" />
+                          <a
+                            href={`mailto:${pharmacy.supervisor.email}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {pharmacy.supervisor.email}
+                          </a>
+                        </div>
+                      )}
+                      {pharmacy.supervisor.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <FaPhone className="text-primary" />
+                          <a
+                            href={`tel:${pharmacy.supervisor.phone}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {pharmacy.supervisor.phone}
+                          </a>
+                        </div>
+                      )}
+                      {pharmacy.supervisor.whatsapp && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <FaWhatsapp className="text-green-500" />
+                          <a
+                            href={`https://wa.me/${formatWhatsAppNumber(pharmacy.supervisor.whatsapp)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-green-500 transition-colors"
+                          >
+                            {pharmacy.supervisor.whatsapp}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Pharmacists Section */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
