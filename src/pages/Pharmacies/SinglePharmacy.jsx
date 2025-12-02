@@ -14,6 +14,7 @@ import {
   FaUserPlus,
   FaTimes,
   FaWhatsapp,
+  FaChartBar,
 } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 import { toast } from 'react-toastify';
@@ -152,13 +153,22 @@ const SinglePharmacy = () => {
           <FaArrowLeft className="h-4 w-4" />
           Back to Pharmacies
         </Link>
-        <Link
-          to={`/pharmacies/${pharmacy._id}/edit`}
-          className="btn btn-primary gap-2"
-        >
-          <FaEdit className="h-4 w-4" />
-          Edit Pharmacy
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/pharmacies/${pharmacy._id}/reports`}
+            className="btn btn-secondary gap-2"
+          >
+            <FaChartBar className="h-4 w-4" />
+            Reports
+          </Link>
+          <Link
+            to={`/pharmacies/${pharmacy._id}/edit`}
+            className="btn btn-primary gap-2"
+          >
+            <FaEdit className="h-4 w-4" />
+            Edit Pharmacy
+          </Link>
+        </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl">

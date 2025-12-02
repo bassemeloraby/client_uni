@@ -4,6 +4,7 @@ import { HomeLayout, Error,
   CreatePharmacy,
   EditPharmacy,
   SinglePharmacy,
+  PharmacyReports,
   UsersPage,
   CreateUser,
   EditUser,
@@ -20,6 +21,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { loader as pharmaciesLoader } from "./pages/Pharmacies/Pharmacies.jsx";
 import { loader as singlePharmacyLoader } from "./pages/Pharmacies/SinglePharmacy.jsx";
 import { loader as editPharmacyLoader } from "./pages/Pharmacies/EditPharmacy.jsx";
+import { loader as pharmacyReportsLoader } from "./pages/Pharmacies/PharmacyReports.jsx";
 import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
@@ -58,6 +60,15 @@ const router = createBrowserRouter([{
         </ProtectedRoute>
       ),
       loader: editPharmacyLoader,
+    },
+    {
+      path: "pharmacies/:id/reports",
+      element: (
+        <ProtectedRoute>
+          <PharmacyReports />
+        </ProtectedRoute>
+      ),
+      loader: pharmacyReportsLoader,
     },
     {
       path: "pharmacies/:id",
