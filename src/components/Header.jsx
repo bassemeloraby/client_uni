@@ -10,9 +10,6 @@ const Header = () => {
           <Link to="/login" className="link link-hover text-xs sm:text-sm">
             Sign in
           </Link>
-          <Link to="/register" className="link link-hover text-xs sm:text-sm">
-            Sign up
-          </Link>
         </div>
       </div>
     </header>
