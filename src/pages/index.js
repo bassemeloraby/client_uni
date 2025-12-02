@@ -9,3 +9,9 @@ export { default as PharmaciesPage } from "./Pharmacies/Pharmacies";
 export { default as CreatePharmacy } from "./Pharmacies/CreatePharmacy";
 export { default as EditPharmacy } from "./Pharmacies/EditPharmacy";
 export { default as SinglePharmacy } from "./Pharmacies/SinglePharmacy";
+
+/** Users */
+export { default as UsersPage } from "./Users/Users";
+export { default as CreateUser } from "./Users/CreateUser";
+export { default as EditUser } from "./Users/EditUser";
+export { default as SingleUser } from "./Users/SingleUser";

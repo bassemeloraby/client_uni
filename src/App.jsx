@@ -5,8 +5,12 @@ import { HomeLayout, Error,
   CreatePharmacy,
   EditPharmacy,
   SinglePharmacy,
+  UsersPage,
+  CreateUser,
+  EditUser,
+  SingleUser,
   Landing
- } from "./pages";
+} from "./pages";
 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
@@ -15,6 +19,9 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { loader as pharmaciesLoader } from "./pages/Pharmacies/Pharmacies.jsx";
 import { loader as singlePharmacyLoader } from "./pages/Pharmacies/SinglePharmacy.jsx";
 import { loader as editPharmacyLoader } from "./pages/Pharmacies/EditPharmacy.jsx";
+import { loader as usersLoader } from "./pages/Users/Users.jsx";
+import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
+import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -43,6 +50,25 @@ const router = createBrowserRouter([{
       path: "pharmacies/:id",
       element: <SinglePharmacy />,
       loader: singlePharmacyLoader,
+    },
+    {
+      path: "users",
+      element: <UsersPage />,
+      loader: usersLoader,
+    },
+    {
+      path: "users/create",
+      element: <CreateUser />,
+    },
+    {
+      path: "users/:id/edit",
+      element: <EditUser />,
+      loader: editUserLoader,
+    },
+    {
+      path: "users/:id",
+      element: <SingleUser />,
+      loader: singleUserLoader,
     },
   ],
 },

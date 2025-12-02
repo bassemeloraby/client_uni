@@ -60,8 +60,10 @@ const Navbar = () => {
                 {desktopLinks.map((section) => {
                   const hasMultipleLinks = section.ping.length > 1;
                   const firstLink = section.ping[0];
+                  const isSettings = section.text === "Settings";
 
-                  if (!hasMultipleLinks && firstLink) {
+                  // Always show Settings as dropdown, even with one item
+                  if (!hasMultipleLinks && firstLink && !isSettings) {
                     return (
                       <li key={section.id}>
                         <NavLink

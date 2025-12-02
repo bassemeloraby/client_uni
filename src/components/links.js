@@ -11,5 +11,9 @@ export const mainPages = [
     text: "Pharmacies",
     ping: [{ id: nanoid(), linkName: "Pharmacies", link: "/pharmacies" }],
   },  
- 
+ {
+  id: nanoid(),
+  text: "Settings",
+  ping: [{ id: nanoid(), linkName: "Users", link: "/users" }],
+ },
 ];
