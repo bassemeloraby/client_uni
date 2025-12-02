@@ -36,6 +36,7 @@ const SinglePharmacy = () => {
   const navigate = useNavigate();
   const [showPharmacistModal, setShowPharmacistModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [pharmacistToRemove, setPharmacistToRemove] = useState(null);
   const [pharmacists, setPharmacists] = useState([]);
   const [isLoadingPharmacists, setIsLoadingPharmacists] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -64,8 +65,8 @@ const SinglePharmacy = () => {
   const handleAssignPharmacist = async (pharmacistId) => {
     setIsAssigning(true);
     try {
-      const response = await customFetch.put(`pharmacies/${pharmacy._id}`, {
-        pharmacist: pharmacistId,
+      const response = await customFetch.post(`pharmacies/${pharmacy._id}/pharmacists`, {
+        pharmacistId: pharmacistId,
       });
 
       if (response.data.success) {
@@ -84,15 +85,14 @@ const SinglePharmacy = () => {
     }
   };
 
-  const handleRemovePharmacist = async () => {
+  const handleRemovePharmacist = async (pharmacistId) => {
     setIsAssigning(true);
     try {
-      const response = await customFetch.put(`pharmacies/${pharmacy._id}`, {
-        pharmacist: null,
-      });
+      const response = await customFetch.delete(`pharmacies/${pharmacy._id}/pharmacists/${pharmacistId}`);
 
       if (response.data.success) {
         toast.success('Pharmacist removed successfully!');
+        setShowRemoveModal(false);
         // Reload the page to show updated data
         navigate(0);
       }
@@ -267,12 +267,12 @@ const SinglePharmacy = () => {
             </div>
           )}
 
-          {/* Pharmacist Section */}
+          {/* Pharmacists Section */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
                 <FaUser className="text-primary" />
-                Assigned Pharmacist
+                Assigned Pharmacists {pharmacy.pharmacists?.length > 0 && `(${pharmacy.pharmacists.length})`}
               </h2>
               <button
                 onClick={() => setShowPharmacistModal(true)}
@@ -280,81 +280,88 @@ const SinglePharmacy = () => {
                 disabled={isAssigning}
               >
                 <FaUserPlus />
-                {pharmacy.pharmacist ? 'Change Pharmacist' : 'Assign Pharmacist'}
+                Add Pharmacist
               </button>
             </div>
-            {pharmacy.pharmacist ? (
-              <div className="bg-base-200 p-4 rounded-lg">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="avatar placeholder">
-                        <div className="bg-primary text-primary-content rounded-full w-12">
-                          <span className="text-lg">
-                            {pharmacy.pharmacist.firstName?.[0]?.toUpperCase() || 'P'}
-                            {pharmacy.pharmacist.lastName?.[0]?.toUpperCase() || ''}
-                          </span>
+            {pharmacy.pharmacists && pharmacy.pharmacists.length > 0 ? (
+              <div className="space-y-3">
+                {pharmacy.pharmacists.map((pharmacist) => (
+                  <div key={pharmacist._id} className="bg-base-200 p-4 rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="avatar placeholder">
+                            <div className="bg-primary text-primary-content rounded-full w-12">
+                              <span className="text-lg">
+                                {pharmacist.firstName?.[0]?.toUpperCase() || 'P'}
+                                {pharmacist.lastName?.[0]?.toUpperCase() || ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold">
+                              {pharmacist.firstName} {pharmacist.lastName}
+                            </h3>
+                            <p className="text-sm text-base-content/70">@{pharmacist.username}</p>
+                          </div>
+                        </div>
+                        <div className="ml-16 space-y-2">
+                          {pharmacist.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <FaEnvelope className="text-primary" />
+                              <a
+                                href={`mailto:${pharmacist.email}`}
+                                className="hover:text-primary transition-colors"
+                              >
+                                {pharmacist.email}
+                              </a>
+                            </div>
+                          )}
+                          {pharmacist.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <FaPhone className="text-primary" />
+                              <a
+                                href={`tel:${pharmacist.phone}`}
+                                className="hover:text-primary transition-colors"
+                              >
+                                {pharmacist.phone}
+                              </a>
+                            </div>
+                          )}
+                          {pharmacist.whatsapp && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <FaWhatsapp className="text-green-500" />
+                              <a
+                                href={`https://wa.me/${formatWhatsAppNumber(pharmacist.whatsapp)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-green-500 transition-colors"
+                              >
+                                {pharmacist.whatsapp}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {pharmacy.pharmacist.firstName} {pharmacy.pharmacist.lastName}
-                        </h3>
-                        <p className="text-sm text-base-content/70">@{pharmacy.pharmacist.username}</p>
-                      </div>
-                    </div>
-                    <div className="ml-16 space-y-2">
-                      {pharmacy.pharmacist.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <FaEnvelope className="text-primary" />
-                          <a
-                            href={`mailto:${pharmacy.pharmacist.email}`}
-                            className="hover:text-primary transition-colors"
-                          >
-                            {pharmacy.pharmacist.email}
-                          </a>
-                        </div>
-                      )}
-                      {pharmacy.pharmacist.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <FaPhone className="text-primary" />
-                          <a
-                            href={`tel:${pharmacy.pharmacist.phone}`}
-                            className="hover:text-primary transition-colors"
-                          >
-                            {pharmacy.pharmacist.phone}
-                          </a>
-                        </div>
-                      )}
-                      {pharmacy.pharmacist.whatsapp && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <FaWhatsapp className="text-green-500" />
-                          <a
-                            href={`https://wa.me/${formatWhatsAppNumber(pharmacy.pharmacist.whatsapp)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-green-500 transition-colors"
-                          >
-                            {pharmacy.pharmacist.whatsapp}
-                          </a>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => {
+                          setPharmacistToRemove(pharmacist);
+                          setShowRemoveModal(true);
+                        }}
+                        className="btn btn-sm btn-ghost text-error gap-2"
+                        disabled={isAssigning}
+                        title="Remove pharmacist"
+                      >
+                        <FaTimes />
+                        Remove
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowRemoveModal(true)}
-                    className="btn btn-sm btn-ghost text-error gap-2"
-                    disabled={isAssigning}
-                    title="Remove pharmacist"
-                  >
-                    <FaTimes />
-                    Remove
-                  </button>
-                </div>
+                ))}
               </div>
             ) : (
               <div className="bg-base-200 p-4 rounded-lg text-center text-base-content/70">
-                <p>No pharmacist assigned to this pharmacy</p>
+                <p>No pharmacists assigned to this pharmacy</p>
               </div>
             )}
           </div>
@@ -463,10 +470,10 @@ const SinglePharmacy = () => {
                           <button
                             onClick={() => handleAssignPharmacist(pharmacist._id)}
                             className="btn btn-primary btn-sm gap-2"
-                            disabled={isAssigning || pharmacy.pharmacist?._id === pharmacist._id}
+                            disabled={isAssigning || pharmacy.pharmacists?.some(p => p._id === pharmacist._id)}
                           >
-                            {pharmacy.pharmacist?._id === pharmacist._id ? (
-                              'Current'
+                            {pharmacy.pharmacists?.some(p => p._id === pharmacist._id) ? (
+                              'Already Assigned'
                             ) : (
                               <>
                                 <FaUserPlus />
@@ -499,7 +506,7 @@ const SinglePharmacy = () => {
       )}
 
       {/* Remove Pharmacist Confirmation Modal */}
-      {showRemoveModal && (
+      {showRemoveModal && pharmacistToRemove && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-base-100 rounded-lg shadow-2xl max-w-md w-full">
             <div className="p-6">
@@ -507,13 +514,16 @@ const SinglePharmacy = () => {
               <p className="text-base-content/70 mb-6">
                 Are you sure you want to remove{' '}
                 <span className="font-semibold">
-                  {pharmacy.pharmacist?.firstName} {pharmacy.pharmacist?.lastName}
+                  {pharmacistToRemove.firstName} {pharmacistToRemove.lastName}
                 </span>{' '}
                 from this pharmacy?
               </p>
               <div className="flex gap-3 justify-end">
                 <button
-                  onClick={() => setShowRemoveModal(false)}
+                  onClick={() => {
+                    setShowRemoveModal(false);
+                    setPharmacistToRemove(null);
+                  }}
                   className="btn btn-outline"
                   disabled={isAssigning}
                 >
@@ -521,8 +531,8 @@ const SinglePharmacy = () => {
                 </button>
                 <button
                   onClick={async () => {
-                    setShowRemoveModal(false);
-                    await handleRemovePharmacist();
+                    await handleRemovePharmacist(pharmacistToRemove._id);
+                    setPharmacistToRemove(null);
                   }}
                   className="btn btn-error gap-2"
                   disabled={isAssigning}
