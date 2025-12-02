@@ -9,6 +9,7 @@ import { HomeLayout, Error,
   CreateUser,
   EditUser,
   SingleUser,
+  DetailedSalesPage,
   Landing
 } from "./pages";
 
@@ -25,6 +26,7 @@ import { loader as pharmacyReportsLoader } from "./pages/Pharmacies/PharmacyRepo
 import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
+import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -113,6 +115,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: singleUserLoader,
+    },
+    {
+      path: "detailed-sales",
+      element: (
+        <ProtectedRoute>
+          <DetailedSalesPage />
+        </ProtectedRoute>
+      ),
+      loader: detailedSalesLoader,
     },
   ],
 },

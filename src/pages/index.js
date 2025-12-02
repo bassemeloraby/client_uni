@@ -15,3 +15,6 @@ export { default as UsersPage } from "./Users/Users";
 export { default as CreateUser } from "./Users/CreateUser";
 export { default as EditUser } from "./Users/EditUser";
 export { default as SingleUser } from "./Users/SingleUser";
+
+/** Detailed Sales */
+export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
