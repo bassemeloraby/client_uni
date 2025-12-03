@@ -13,6 +13,7 @@ const CreatePharmacy = () => {
   const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false);
   const [workingDaysMode, setWorkingDaysMode] = useState('everyday'); // 'everyday' or 'custom'
   const [formData, setFormData] = useState({
+    branchCode: '',
     name: '',
     address: {
       street: '',
@@ -370,6 +371,21 @@ const CreatePharmacy = () => {
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">Basic Information</h2>
               
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">Branch Code *</span>
+                </label>
+                <input
+                  type="number"
+                  name="branchCode"
+                  value={formData.branchCode}
+                  onChange={handleChange}
+                  required
+                  className="input input-bordered w-full"
+                  placeholder="Enter branch code"
+                />
+              </div>
+
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">Pharmacy Name *</span>

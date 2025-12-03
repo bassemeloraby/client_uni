@@ -26,6 +26,7 @@ const EditPharmacy = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false);
   const [formData, setFormData] = useState({
+    branchCode: '',
     name: '',
     address: {
       street: '',
@@ -76,6 +77,7 @@ const EditPharmacy = () => {
   useEffect(() => {
     if (pharmacy) {
       setFormData({
+        branchCode: pharmacy.branchCode || '',
         name: pharmacy.name || '',
         address: {
           street: pharmacy.address?.street || '',
@@ -412,6 +414,21 @@ const EditPharmacy = () => {
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">Basic Information</h2>
               
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">Branch Code *</span>
+                </label>
+                <input
+                  type="number"
+                  name="branchCode"
+                  value={formData.branchCode}
+                  onChange={handleChange}
+                  required
+                  className="input input-bordered w-full"
+                  placeholder="Enter branch code"
+                />
+              </div>
+
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">Pharmacy Name *</span>

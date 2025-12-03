@@ -15,6 +15,7 @@ import {
   FaTimes,
   FaWhatsapp,
   FaChartBar,
+  FaStore,
 } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 import { toast } from 'react-toastify';
@@ -179,6 +180,14 @@ const SinglePharmacy = () => {
               <h1 className="text-4xl font-bold text-primary mb-2">{pharmacy.name}</h1>
               {pharmacy.description && (
                 <p className="text-lg text-base-content/70">{pharmacy.description}</p>
+              )}
+              {pharmacy.branchCode && (
+                <div className="flex items-center gap-2 mt-3">
+                  <FaStore className="text-primary text-lg" />
+                  <span className="text-lg font-semibold">
+                    Branch Code: <span className="text-primary">{pharmacy.branchCode}</span>
+                  </span>
+                </div>
               )}
             </div>
             <div className="flex items-center gap-2">
