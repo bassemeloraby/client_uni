@@ -361,6 +361,7 @@ const DetailedSales = () => {
                 <th>Qty</th>
                 <th>Unit Price</th>
                 <th>Discount</th>
+                <th>Items Net Price</th>
                 <th>VAT</th>
                 <th>Net Total</th>
                 <th>Delivery</th>
@@ -419,6 +420,12 @@ const DetailedSales = () => {
                     </div>
                   </td>
                   <td>{formatCurrency(sale.TotalDiscount)}</td>
+                  <td>
+                    <div className="flex items-center gap-1">
+                      <FaDollarSign className="text-info" />
+                      <span>{formatCurrency(sale.ItemsNetPrice)}</span>
+                    </div>
+                  </td>
                   <td>{formatCurrency(sale.TotalVAT)}</td>
                   <td>
                     <div className="font-semibold text-success">
@@ -431,7 +438,7 @@ const DetailedSales = () => {
             </tbody>
             <tfoot>
               <tr>
-                <th colSpan="12" className="text-right">Total:</th>
+                <th colSpan="13" className="text-right">Total:</th>
                 <th className="text-success">
                   {formatCurrency(sales.reduce((sum, sale) => sum + (sale.NetTotal || 0), 0))}
                 </th>
