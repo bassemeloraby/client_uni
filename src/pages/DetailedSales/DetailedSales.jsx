@@ -9,11 +9,14 @@ import {
   FaFileInvoice,
   FaBox,
   FaDollarSign,
-  FaTimes
+  FaTimes,
+  FaChevronLeft,
+  FaChevronRight
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
 const url = "detailed-sales";
+const ITEMS_PER_PAGE = 100;
 
 export const loader = async ({ request }) => {
   try {
@@ -29,7 +32,11 @@ export const loader = async ({ request }) => {
     if (params.get('salesName')) queryParams.salesName = params.get('salesName');
     if (params.get('materialNumber')) queryParams.materialNumber = params.get('materialNumber');
     if (params.get('search')) queryParams.search = params.get('search');
-    if (params.get('limit')) queryParams.limit = params.get('limit');
+    
+    // Pagination
+    const page = parseInt(params.get('page')) || 1;
+    queryParams.limit = ITEMS_PER_PAGE;
+    queryParams.skip = (page - 1) * ITEMS_PER_PAGE;
     
     const queryString = new URLSearchParams(queryParams).toString();
     const response = await customFetch.get(`${url}${queryString ? `?${queryString}` : ''}`);
@@ -38,6 +45,7 @@ export const loader = async ({ request }) => {
       return {
         sales: response.data.data,
         total: response.data.total || response.data.data.length,
+        page,
       };
     }
     throw new Error("Failed to fetch detailed sales");
@@ -48,9 +56,11 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSales = () => {
-  const { sales, total } = useLoaderData();
+  const { sales, total, page } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  const currentPage = page || 1;
   
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -64,6 +74,11 @@ const DetailedSales = () => {
     salesName: searchParams.get('salesName') || '',
     materialNumber: searchParams.get('materialNumber') || '',
   });
+  
+  // Calculate pagination values
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, total);
 
   // Update state when URL params change
   useEffect(() => {
@@ -98,7 +113,7 @@ const DetailedSales = () => {
     }).format(amount || 0);
   };
 
-  // Apply filters
+  // Apply filters (reset to page 1)
   const applyFilters = () => {
     const params = new URLSearchParams();
     
@@ -107,7 +122,15 @@ const DetailedSales = () => {
     });
     
     if (searchTerm) params.append('search', searchTerm);
+    params.append('page', '1'); // Reset to first page when applying filters
     
+    navigate(`/detailed-sales?${params.toString()}`);
+  };
+  
+  // Navigate to specific page
+  const goToPage = (page) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', page.toString());
     navigate(`/detailed-sales?${params.toString()}`);
   };
 
@@ -310,8 +333,15 @@ const DetailedSales = () => {
       )}
 
       {/* Results Summary */}
-      <div className="mb-4 text-sm text-base-content/70">
-        Showing {sales.length} of {total} sales records
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-sm text-base-content/70">
+          Showing {startIndex} to {endIndex} of {total} sales records
+        </div>
+        {totalPages > 1 && (
+          <div className="text-sm text-base-content/70">
+            Page {currentPage} of {totalPages}
+          </div>
+        )}
       </div>
 
       {/* Sales Table */}
@@ -425,6 +455,64 @@ const DetailedSales = () => {
               Clear Filters
             </button>
           )}
+        </div>
+      )}
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <FaChevronLeft />
+            Previous
+          </button>
+          
+          <div className="join">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                // Show first page, last page, current page, and pages around current
+                return (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 2 && page <= currentPage + 2)
+                );
+              })
+              .map((page, index, array) => {
+                // Add ellipsis if there's a gap
+                const prevPage = array[index - 1];
+                const showEllipsis = prevPage && page - prevPage > 1;
+                
+                return (
+                  <React.Fragment key={page}>
+                    {showEllipsis && (
+                      <button className="join-item btn btn-sm btn-disabled" disabled>
+                        ...
+                      </button>
+                    )}
+                    <button
+                      className={`join-item btn btn-sm ${
+                        currentPage === page ? 'btn-active' : ''
+                      }`}
+                      onClick={() => goToPage(page)}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                );
+              })}
+          </div>
+          
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <FaChevronRight />
+          </button>
         </div>
       )}
     </div>
