@@ -18,3 +18,4 @@ export { default as SingleUser } from "./Users/SingleUser";
 
 /** Detailed Sales */
 export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
+export { default as DetailedSalesStatistics } from "./DetailedSales/DetailedSalesStatistics";

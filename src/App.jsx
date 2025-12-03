@@ -10,6 +10,7 @@ import { HomeLayout, Error,
   EditUser,
   SingleUser,
   DetailedSalesPage,
+  DetailedSalesStatistics,
   Landing
 } from "./pages";
 
@@ -27,6 +28,7 @@ import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
+import { loader as detailedSalesStatisticsLoader } from "./pages/DetailedSales/DetailedSalesStatistics.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -124,6 +126,15 @@ const router = createBrowserRouter([{
         </ProtectedRoute>
       ),
       loader: detailedSalesLoader,
+    },
+    {
+      path: "detailed-sales/statistics",
+      element: (
+        <ProtectedRoute>
+          <DetailedSalesStatistics />
+        </ProtectedRoute>
+      ),
+      loader: detailedSalesStatisticsLoader,
     },
   ],
 },

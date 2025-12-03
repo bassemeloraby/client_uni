@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLoaderData, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLoaderData, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { 
   FaSearch, 
   FaFilter, 
@@ -11,7 +11,8 @@ import {
   FaDollarSign,
   FaTimes,
   FaChevronLeft,
-  FaChevronRight
+  FaChevronRight,
+  FaChartBar
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -157,6 +158,13 @@ const DetailedSales = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className='text-6xl font-bold text-blue-500'>Detailed Sales</h1>
         <div className="flex items-center gap-4">
+          <Link
+            to="/detailed-sales/statistics"
+            className="btn btn-primary gap-2"
+          >
+            <FaChartBar className="h-5 w-5" />
+            Statistics
+          </Link>
           <button
             className="btn btn-outline gap-2"
             onClick={() => setShowFilters(!showFilters)}
