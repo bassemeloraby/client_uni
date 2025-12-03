@@ -15,12 +15,22 @@ const Navbar = () => {
 
   const desktopLinks = useMemo(() => {
     return mainPages
-      .filter((section) => section.text !== "Settings" || isAdmin)
+      .filter((section) => {
+        // Hide Settings for non-admin users
+        if (section.text === "Settings" && !isAdmin) {
+          return false;
+        }
+        // Hide Pharmacies and Sales for non-authenticated users
+        if (!user && (section.text === "Pharmacies" || section.text === "Sales")) {
+          return false;
+        }
+        return true;
+      })
       .map((section) => ({
         ...section,
         ping: section.ping || [],
       }));
-  }, [isAdmin]);
+  }, [isAdmin, user]);
 
   const activeSection = useMemo(
     () => desktopLinks.find((section) => section.id === activeSectionId),

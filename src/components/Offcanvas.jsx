@@ -77,6 +77,10 @@ const Offcanvas = ({ isOpen, setIsOpen }) => {
             if (mainPage.text === "Settings" && !isAdmin) {
               return null;
             }
+            // Hide Pharmacies and Sales for non-authenticated users
+            if (!user && (mainPage.text === "Pharmacies" || mainPage.text === "Sales")) {
+              return null;
+            }
             return (
               <LinkComponent 
                 key={mi} 
