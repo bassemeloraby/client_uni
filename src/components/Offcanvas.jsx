@@ -15,7 +15,7 @@ import {
 
 const Offcanvas = ({ isOpen, setIsOpen }) => {
   const { user } = useSelector((state) => state.auth);
-  const isAdmin = user?.userRole === "admin";
+  const isAdmin = user?.userRole?.toLowerCase() === "admin";
 
   // Function to get the appropriate icon based on the page text
   const getIconForPage = (text) => {

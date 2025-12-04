@@ -10,7 +10,7 @@ import { FaChevronDown } from "react-icons/fa";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useSelector((state) => state.auth);
-  const isAdmin = user?.userRole === "admin";
+  const isAdmin = user?.userRole?.toLowerCase() === "admin";
   const [activeSectionId, setActiveSectionId] = useState(null);
 
   const desktopLinks = useMemo(() => {

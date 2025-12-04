@@ -43,6 +43,10 @@ const Login = () => {
       if (response.data.success) {
         const { user: userData, token } = response.data.data;
         
+        // Debug: Log user data to verify role
+        console.log('Login successful - User data:', userData);
+        console.log('User role:', userData.role);
+        
         // Dispatch login action
         dispatch(loginUser({
           username: userData.username,
