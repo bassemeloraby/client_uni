@@ -18,6 +18,16 @@ const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 
 export const loader = async () => {
   try {
+    // Check if user is authenticated
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (!user || !user.jwt) {
+      // Redirect to login if not authenticated
+      throw new Response("Unauthorized", { 
+        status: 401,
+        statusText: "Authentication required"
+      });
+    }
+
     const [pharmacyStatsResponse, salesByNameResponse] = await Promise.all([
       customFetch.get(url),
       customFetch.get(salesByNameUrl),
@@ -32,7 +42,22 @@ export const loader = async () => {
     throw new Error("Failed to fetch statistics");
   } catch (error) {
     console.error("Error fetching statistics:", error);
-    throw new Error(error.response?.data?.message || "Failed to fetch statistics");
+    
+    // Handle 401 errors - redirect to login
+    if (error.response?.status === 401 || error.status === 401) {
+      // Clear user data
+      localStorage.removeItem('user');
+      // Redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Response("Unauthorized", { 
+        status: 401,
+        statusText: "Authentication required"
+      });
+    }
+    
+    throw new Error(error.response?.data?.message || error.message || "Failed to fetch statistics");
   }
 };
 

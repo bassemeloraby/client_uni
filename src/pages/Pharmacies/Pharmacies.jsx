@@ -7,6 +7,16 @@ const url = "pharmacies";
 
 export const loader = async ({ request }) => {
   try {
+    // Check if user is authenticated
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (!user || !user.jwt) {
+      // Redirect to login if not authenticated
+      throw new Response("Unauthorized", { 
+        status: 401,
+        statusText: "Authentication required"
+      });
+    }
+
     const response = await customFetch.get(url);
     if (response.data.success) {
       return response.data.data;
@@ -14,7 +24,22 @@ export const loader = async ({ request }) => {
     throw new Error("Failed to fetch pharmacies");
   } catch (error) {
     console.error("Error fetching pharmacies:", error);
-    throw new Error(error.response?.data?.message || "Failed to fetch pharmacies");
+    
+    // Handle 401 errors - redirect to login
+    if (error.response?.status === 401 || error.status === 401) {
+      // Clear user data
+      localStorage.removeItem('user');
+      // Redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Response("Unauthorized", { 
+        status: 401,
+        statusText: "Authentication required"
+      });
+    }
+    
+    throw new Error(error.response?.data?.message || error.message || "Failed to fetch pharmacies");
   }
 };
 
