@@ -468,33 +468,33 @@ const DetailedSalesStatistics = () => {
                     Sales Distribution
                   </h3>
                   {pieChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
-                          outerRadius={120}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
-                        />
-                        <Legend 
-                          verticalAlign="bottom" 
-                          height={36}
-                          formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                          <Pie
+                            data={pieChartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={true}
+                            label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => formatCurrency(value)}
+                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
+                          />
+                          <Legend 
+                            verticalAlign="bottom" 
+                            height={36}
+                            formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-96">
                       <p className="text-base-content/70">No data available for chart</p>
@@ -650,7 +650,7 @@ const DetailedSalesStatistics = () => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
+                          label={false}
                           outerRadius={120}
                           fill="#8884d8"
                           dataKey="value"
@@ -660,13 +660,21 @@ const DetailedSalesStatistics = () => {
                           ))}
                         </Pie>
                         <Tooltip 
-                          formatter={(value) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
+                          formatter={(value, name, props) => [
+                            `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
+                            props.payload.name
+                          ]}
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
                         />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={36}
-                          formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
+                          height={60}
+                          wrapperStyle={{ paddingTop: '20px' }}
+                          formatter={(value, entry) => (
+                            <span style={{ fontSize: '14px', fontWeight: '500' }}>
+                              {value}: {formatPercentage(entry.payload.percentage)}%
+                            </span>
+                          )}
                         />
                       </PieChart>
                     </ResponsiveContainer>
