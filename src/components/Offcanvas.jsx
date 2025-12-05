@@ -16,6 +16,7 @@ import {
 const Offcanvas = ({ isOpen, setIsOpen }) => {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userRole?.toLowerCase() === "admin";
+  const isSupervisor = user?.userRole?.toLowerCase() === "pharmacy supervisor";
 
   // Function to get the appropriate icon based on the page text
   const getIconForPage = (text) => {
@@ -77,8 +78,8 @@ const Offcanvas = ({ isOpen, setIsOpen }) => {
             if (mainPage.text === "Settings" && !isAdmin) {
               return null;
             }
-            // Hide Sales for non-admin users
-            if (mainPage.text === "Sales" && !isAdmin) {
+            // Hide Sales for non-admin and non-supervisor users
+            if (mainPage.text === "Sales" && !isAdmin && !isSupervisor) {
               return null;
             }
             // Hide Pharmacies for non-authenticated users

@@ -11,6 +11,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userRole?.toLowerCase() === "admin";
+  const isSupervisor = user?.userRole?.toLowerCase() === "pharmacy supervisor";
   const [activeSectionId, setActiveSectionId] = useState(null);
 
   const desktopLinks = useMemo(() => {
@@ -20,8 +21,8 @@ const Navbar = () => {
         if (section.text === "Settings" && !isAdmin) {
           return false;
         }
-        // Hide Sales for non-admin users
-        if (section.text === "Sales" && !isAdmin) {
+        // Hide Sales for non-admin and non-supervisor users
+        if (section.text === "Sales" && !isAdmin && !isSupervisor) {
           return false;
         }
         // Hide Pharmacies for non-authenticated users
@@ -40,7 +41,7 @@ const Navbar = () => {
           return true;
         }),
       }));
-  }, [isAdmin, user]);
+  }, [isAdmin, isSupervisor, user]);
 
   const activeSection = useMemo(
     () => desktopLinks.find((section) => section.id === activeSectionId),

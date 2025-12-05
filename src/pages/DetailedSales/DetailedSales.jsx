@@ -12,7 +12,9 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
-  FaChartBar
+  FaChartBar,
+  FaExclamationTriangle,
+  FaLock
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -62,6 +64,13 @@ export const loader = async ({ request }) => {
     throw new Error("Failed to fetch detailed sales");
   } catch (error) {
     console.error("Error fetching detailed sales:", error);
+    console.error("Error details:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      hasResponse: !!error.response
+    });
     
     // Handle 401 errors - redirect to login
     if (error.response?.status === 401 || error.status === 401) {
@@ -77,12 +86,32 @@ export const loader = async ({ request }) => {
       });
     }
     
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch detailed sales");
+    // Handle 403 errors - permission denied
+    if (error.response?.status === 403 || error.status === 403) {
+      console.log("403 Permission denied - returning error data");
+      return {
+        sales: [],
+        total: 0,
+        page: 1,
+        permissionError: error.response?.data?.message || error.response?.data?.error || 'Access denied. You are not authorized to view these reports.',
+        permissionReason: error.response?.data?.reason || 'You are not assigned as a supervisor for this pharmacy. Only the assigned supervisor or an administrator can view pharmacy reports.',
+      };
+    }
+    
+    // For any other error, return empty data instead of throwing to prevent navigation
+    console.warn("Unexpected error in detailed sales loader:", error);
+    return {
+      sales: [],
+      total: 0,
+      page: 1,
+      permissionError: error.response?.data?.message || error.message || "Failed to fetch detailed sales",
+      permissionReason: "An unexpected error occurred while loading the data.",
+    };
   }
 };
 
 const DetailedSales = () => {
-  const { sales, total, page } = useLoaderData();
+  const { sales, total, page, permissionError, permissionReason } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -177,6 +206,51 @@ const DetailedSales = () => {
 
   // Check if any filters are active
   const hasActiveFilters = Object.values(filters).some(val => val) || searchTerm;
+
+  // Handle permission error
+  if (permissionError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Link
+            to="/pharmacies"
+            className="btn btn-ghost gap-2"
+          >
+            <FaChevronLeft className="h-4 w-4" />
+            Back to Pharmacies
+          </Link>
+        </div>
+
+        <div className="card bg-base-100 shadow-xl border-2 border-error">
+          <div className="card-body">
+            <div className="flex items-center gap-3 mb-4">
+              <FaLock className="text-4xl text-error" />
+              <h1 className="text-3xl font-bold text-error">
+                Access Denied
+              </h1>
+            </div>
+            
+            <div className="divider"></div>
+            
+            <div className="alert alert-error">
+              <FaExclamationTriangle className="text-2xl" />
+              <div>
+                <h3 className="font-bold">Permission Error</h3>
+                <div className="text-sm mt-2">
+                  {permissionError}
+                </div>
+                {permissionReason && (
+                  <div className="text-sm mt-2">
+                    <strong>Reason:</strong> {permissionReason}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

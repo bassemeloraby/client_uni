@@ -18,6 +18,7 @@ import { HomeLayout, Error,
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminOrSupervisorRoute from './components/AdminOrSupervisorRoute';
 
 
 // Import loaders and actions directly
@@ -132,18 +133,18 @@ const router = createBrowserRouter([{
     {
       path: "detailed-sales",
       element: (
-        <AdminRoute>
+        <AdminOrSupervisorRoute>
           <DetailedSalesPage />
-        </AdminRoute>
+        </AdminOrSupervisorRoute>
       ),
       loader: detailedSalesLoader,
     },
     {
       path: "detailed-sales/statistics",
       element: (
-        <AdminRoute>
+        <AdminOrSupervisorRoute>
           <DetailedSalesStatistics />
-        </AdminRoute>
+        </AdminOrSupervisorRoute>
       ),
       loader: detailedSalesStatisticsLoader,
     },
