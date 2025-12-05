@@ -10,13 +10,15 @@ import {
   FaUser,
   FaShoppingCart,
   FaBox,
-  FaFilter
+  FaFilter,
+  FaFileInvoice
 } from 'react-icons/fa';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { customFetch } from "../../utils";
 
 const url = "detailed-sales/stats/pharmacies-by-branch";
 const salesByNameUrl = "detailed-sales/stats/sales-by-name";
+const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
 
 export const loader = async ({ request }) => {
   try {
@@ -40,19 +42,33 @@ export const loader = async ({ request }) => {
 
     // Build sales by name URL with branchCode if provided
     let salesByNameUrlWithFilter = salesByNameUrl;
+    let salesByInvoiceTypeUrlWithFilter = salesByInvoiceTypeUrl;
     if (branchCode) {
       salesByNameUrlWithFilter += `?branchCode=${branchCode}`;
+      salesByInvoiceTypeUrlWithFilter += `?branchCode=${branchCode}`;
     }
 
-    const [pharmacyStatsResponse, salesByNameResponse] = await Promise.all([
+    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse] = await Promise.allSettled([
       customFetch.get(url),
       customFetch.get(salesByNameUrlWithFilter),
+      customFetch.get(salesByInvoiceTypeUrlWithFilter),
     ]);
     
-    if (pharmacyStatsResponse.data.success && salesByNameResponse.data.success) {
+    const pharmacyStats = pharmacyStatsResponse.status === 'fulfilled' && pharmacyStatsResponse.value.data.success 
+      ? pharmacyStatsResponse.value.data.data 
+      : null;
+    const salesByNameStats = salesByNameResponse.status === 'fulfilled' && salesByNameResponse.value.data.success 
+      ? salesByNameResponse.value.data.data 
+      : null;
+    const salesByInvoiceTypeStats = salesByInvoiceTypeResponse.status === 'fulfilled' && salesByInvoiceTypeResponse.value.data.success 
+      ? salesByInvoiceTypeResponse.value.data.data 
+      : null;
+    
+    if (pharmacyStats && salesByNameStats) {
       return {
-        pharmacyStats: pharmacyStatsResponse.data.data,
-        salesByNameStats: salesByNameResponse.data.data,
+        pharmacyStats,
+        salesByNameStats,
+        salesByInvoiceTypeStats,
         pharmacies,
         selectedBranchCode: branchCode || null,
       };
@@ -80,9 +96,10 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, pharmacies, selectedBranchCode } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, pharmacies, selectedBranchCode } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
+  const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get selected pharmacy name
@@ -367,125 +384,122 @@ const DetailedSalesStatistics = () => {
                 </div>
               </div>
 
-              {/* Table and Pie Chart Side by Side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="table table-zebra w-full">
-                    <thead>
-                      <tr>
-                        <th>Sales Person</th>
-                        <th>Total Sales</th>
-                        <th>% of Total</th>
-                        <th>Transactions</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesByNameStatistics.map((stat) => (
-                        <tr key={stat.salesName} className="hover">
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <FaUser className="text-primary" />
-                              <span className="font-semibold">{stat.salesName}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <FaDollarSign className="text-warning" />
-                              <span className="text-lg font-semibold text-success">
-                                {formatCurrency(stat.totalSales)}
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <span className="badge badge-primary badge-lg">
-                                {formatPercentage(stat.percentage)}%
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <FaShoppingCart className="text-info" />
-                              <span className="font-semibold">{stat.totalTransactions}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <Link
-                              to={`/detailed-sales?salesName=${encodeURIComponent(stat.salesName)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
-                              className="btn btn-sm btn-primary gap-2"
-                            >
-                              <FaChartBar />
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <th>Total</th>
-                        <th>
-                          <span className="text-lg font-semibold text-success">
-                            {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                          </span>
-                        </th>
-                        <th>
-                          <span className="badge badge-primary badge-lg">100.00%</span>
-                        </th>
-                        <th>
-                          <span className="text-lg font-semibold">
-                            {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
-                          </span>
-                        </th>
-                        <th></th>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                {/* Pie Chart */}
-                <div className="card bg-base-200 shadow-md">
-                  <div className="card-body">
-                    <h3 className="card-title text-lg mb-4">
-                      <FaChartBar className="text-primary" />
-                      Sales Distribution
-                    </h3>
-                    {pieChartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={400}>
-                        <PieChart>
-                          <Pie
-                            data={pieChartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
-                            outerRadius={120}
-                            fill="#8884d8"
-                            dataKey="value"
+              {/* Table */}
+              <div className="overflow-x-auto mb-6">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Sales Person</th>
+                      <th>Total Sales</th>
+                      <th>% of Total</th>
+                      <th>Transactions</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesByNameStatistics.map((stat) => (
+                      <tr key={stat.salesName} className="hover">
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaUser className="text-primary" />
+                            <span className="font-semibold">{stat.salesName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaDollarSign className="text-warning" />
+                            <span className="text-lg font-semibold text-success">
+                              {formatCurrency(stat.totalSales)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className="badge badge-primary badge-lg">
+                              {formatPercentage(stat.percentage)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaShoppingCart className="text-info" />
+                            <span className="font-semibold">{stat.totalTransactions}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/detailed-sales?salesName=${encodeURIComponent(stat.salesName)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
+                            className="btn btn-sm btn-primary gap-2"
                           >
-                            {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
-                          />
-                          <Legend 
-                            verticalAlign="bottom" 
-                            height={36}
-                            formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-96">
-                        <p className="text-base-content/70">No data available for chart</p>
-                      </div>
-                    )}
-                  </div>
+                            <FaChartBar />
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Total</th>
+                      <th>
+                        <span className="text-lg font-semibold text-success">
+                          {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                        </span>
+                      </th>
+                      <th>
+                        <span className="badge badge-primary badge-lg">100.00%</span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold">
+                          {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                        </span>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Pie Chart */}
+              <div className="card bg-base-200 shadow-md">
+                <div className="card-body">
+                  <h3 className="card-title text-lg mb-4">
+                    <FaChartBar className="text-primary" />
+                    Sales Distribution
+                  </h3>
+                  {pieChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value) => formatCurrency(value)}
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-96">
+                      <p className="text-base-content/70">No data available for chart</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -493,6 +507,181 @@ const DetailedSalesStatistics = () => {
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No sales person statistics available
+              </p>
+              <p className="text-base-content/50">
+                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sales by Invoice Type Statistics */}
+      <div className="card bg-base-100 shadow-xl mt-8">
+        <div className="card-body">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <h2 className="card-title">
+              <FaFileInvoice className="text-primary" />
+              Sales by Invoice Type
+              {selectedPharmacy && (
+                <span className="text-lg font-normal text-base-content/70 ml-2">
+                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
+                </span>
+              )}
+            </h2>
+          </div>
+          
+          {salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
+            <>
+              {/* Invoice Type Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Invoice Types</div>
+                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalInvoiceTypes || 0}</div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Sales</div>
+                  <div className="stat-value text-2xl">
+                    {formatCurrency(salesByInvoiceTypeSummary?.totalSales || 0)}
+                  </div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Transactions</div>
+                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalTransactions || 0}</div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Units Quantity</div>
+                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalQuantity || 0}</div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto mb-6">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Invoice Type</th>
+                      <th>Total Sales</th>
+                      <th>% of Total</th>
+                      <th>Transactions</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesByInvoiceTypeStatistics.map((stat) => (
+                      <tr key={stat.invoiceType} className="hover">
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaFileInvoice className="text-primary" />
+                            <span className="font-semibold">{stat.invoiceType}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaDollarSign className="text-warning" />
+                            <span className="text-lg font-semibold text-success">
+                              {formatCurrency(stat.totalSales)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className="badge badge-primary badge-lg">
+                              {formatPercentage(stat.percentage)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaShoppingCart className="text-info" />
+                            <span className="font-semibold">{stat.totalTransactions}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/detailed-sales?invoiceType=${encodeURIComponent(stat.invoiceType)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
+                            className="btn btn-sm btn-primary gap-2"
+                          >
+                            <FaChartBar />
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Total</th>
+                      <th>
+                        <span className="text-lg font-semibold text-success">
+                          {formatCurrency(salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                        </span>
+                      </th>
+                      <th>
+                        <span className="badge badge-primary badge-lg">100.00%</span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold">
+                          {salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                        </span>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Pie Chart */}
+              <div className="card bg-base-200 shadow-md">
+                <div className="card-body">
+                  <h3 className="card-title text-lg mb-4">
+                    <FaChartBar className="text-primary" />
+                    Invoice Type Distribution
+                  </h3>
+                  {salesByInvoiceTypeStatistics.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <PieChart>
+                        <Pie
+                          data={salesByInvoiceTypeStatistics.map((stat, index) => ({
+                            name: stat.invoiceType,
+                            value: stat.totalSales,
+                            percentage: stat.percentage,
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {salesByInvoiceTypeStatistics.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value) => formatCurrency(value)}
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-96">
+                      <p className="text-base-content/70">No data available for chart</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-2xl text-base-content/70 mb-4">
+                No invoice type statistics available
               </p>
               <p className="text-base-content/50">
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
