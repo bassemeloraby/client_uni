@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLoaderData, Link, useSearchParams } from 'react-router-dom';
 import { 
   FaChartBar, 
@@ -137,6 +137,50 @@ const DetailedSalesStatistics = () => {
     value: stat.totalSales,
     percentage: stat.percentage,
   })) || [];
+
+  // Process sales by invoice type statistics: combine insurance and returninsurance
+  const processedSalesByInvoiceTypeStatistics = useMemo(() => {
+    if (!salesByInvoiceTypeStatistics || salesByInvoiceTypeStatistics.length === 0) {
+      return [];
+    }
+
+    // Find insurance and returninsurance entries
+    const insuranceStat = salesByInvoiceTypeStatistics.find(stat => 
+      stat.invoiceType?.toLowerCase() === 'insurance'
+    );
+    const returnInsuranceStat = salesByInvoiceTypeStatistics.find(stat => 
+      stat.invoiceType?.toLowerCase() === 'returninsurance'
+    );
+
+    // Filter out insurance and returninsurance
+    const filteredStats = salesByInvoiceTypeStatistics.filter(stat => {
+      const invoiceTypeLower = stat.invoiceType?.toLowerCase();
+      return invoiceTypeLower !== 'insurance' && invoiceTypeLower !== 'returninsurance';
+    });
+
+    // Calculate total insurance if both exist
+    if (insuranceStat || returnInsuranceStat) {
+      const totalInsuranceSales = (insuranceStat?.totalSales || 0) + (returnInsuranceStat?.totalSales || 0);
+      const totalInsuranceTransactions = (insuranceStat?.totalTransactions || 0) + (returnInsuranceStat?.totalTransactions || 0);
+      
+      // Calculate total sales for percentage calculation
+      const totalAllSales = salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + (stat.totalSales || 0), 0);
+      const totalInsurancePercentage = totalAllSales > 0 ? (totalInsuranceSales / totalAllSales) * 100 : 0;
+
+      // Create Total insurance entry
+      const totalInsuranceEntry = {
+        invoiceType: 'Total insurance',
+        totalSales: totalInsuranceSales,
+        percentage: totalInsurancePercentage,
+        totalTransactions: totalInsuranceTransactions,
+      };
+
+      // Add Total insurance to the filtered stats
+      return [...filteredStats, totalInsuranceEntry];
+    }
+
+    return filteredStats;
+  }, [salesByInvoiceTypeStatistics]);
 
   // Colors for pie chart
   const COLORS = [
@@ -531,13 +575,13 @@ const DetailedSalesStatistics = () => {
             </h2>
           </div>
           
-          {salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
+          {processedSalesByInvoiceTypeStatistics && processedSalesByInvoiceTypeStatistics.length > 0 ? (
             <>
               {/* Invoice Type Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Invoice Types</div>
-                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalInvoiceTypes || 0}</div>
+                  <div className="stat-value text-2xl">{processedSalesByInvoiceTypeStatistics.length}</div>
                 </div>
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Sales</div>
@@ -568,7 +612,7 @@ const DetailedSalesStatistics = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {salesByInvoiceTypeStatistics.map((stat) => (
+                    {processedSalesByInvoiceTypeStatistics.map((stat) => (
                       <tr key={stat.invoiceType} className="hover">
                         <td>
                           <div className="flex items-center gap-2">
@@ -598,13 +642,17 @@ const DetailedSalesStatistics = () => {
                           </div>
                         </td>
                         <td>
-                          <Link
-                            to={`/detailed-sales?invoiceType=${encodeURIComponent(stat.invoiceType)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
-                            className="btn btn-sm btn-primary gap-2"
-                          >
-                            <FaChartBar />
-                            View
-                          </Link>
+                          {stat.invoiceType === 'Total insurance' ? (
+                            <span className="text-base-content/50 text-sm">N/A</span>
+                          ) : (
+                            <Link
+                              to={`/detailed-sales?invoiceType=${encodeURIComponent(stat.invoiceType)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
+                              className="btn btn-sm btn-primary gap-2"
+                            >
+                              <FaChartBar />
+                              View
+                            </Link>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -614,7 +662,7 @@ const DetailedSalesStatistics = () => {
                       <th>Total</th>
                       <th>
                         <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                          {formatCurrency(processedSalesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
                         </span>
                       </th>
                       <th>
@@ -622,7 +670,7 @@ const DetailedSalesStatistics = () => {
                       </th>
                       <th>
                         <span className="text-lg font-semibold">
-                          {salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                          {processedSalesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
                         </span>
                       </th>
                       <th></th>
@@ -638,11 +686,11 @@ const DetailedSalesStatistics = () => {
                     <FaChartBar className="text-primary" />
                     Invoice Type Distribution
                   </h3>
-                  {salesByInvoiceTypeStatistics.length > 0 ? (
+                  {processedSalesByInvoiceTypeStatistics.length > 0 ? (
                     <ResponsiveContainer width="100%" height={400}>
                       <PieChart>
                         <Pie
-                          data={salesByInvoiceTypeStatistics.map((stat, index) => ({
+                          data={processedSalesByInvoiceTypeStatistics.map((stat, index) => ({
                             name: stat.invoiceType,
                             value: stat.totalSales,
                             percentage: stat.percentage,
@@ -655,7 +703,7 @@ const DetailedSalesStatistics = () => {
                           fill="#8884d8"
                           dataKey="value"
                         >
-                          {salesByInvoiceTypeStatistics.map((entry, index) => (
+                          {processedSalesByInvoiceTypeStatistics.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
