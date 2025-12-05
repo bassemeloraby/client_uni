@@ -598,7 +598,7 @@ const DetailedSalesStatistics = () => {
                           </div>
                         </td>
                         <td>
-                          {stat.invoiceType === 'Total insurance' || stat.invoiceType === 'Total Online' ? (
+                          {stat.invoiceType === 'Total insurance' || stat.invoiceType === 'Total Online' || stat.invoiceType === 'Total CashCustomer' || stat.invoiceType === 'Total Normal' ? (
                             <span className="text-base-content/50 text-sm">N/A</span>
                           ) : (
                             <Link
