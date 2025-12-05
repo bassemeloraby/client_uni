@@ -59,7 +59,15 @@ const Pharmacies = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className='text-6xl font-bold text-blue-500'>Pharmacies</h1>
+        <div>
+          <h1 className='text-6xl font-bold text-blue-500'>Pharmacies</h1>
+          <p className="text-lg text-base-content/70 mt-2">
+            {searchTerm 
+              ? `Showing ${filteredPharmacies.length} of ${pharmacies.length} ${pharmacies.length === 1 ? 'pharmacy' : 'pharmacies'}`
+              : `${pharmacies.length} ${pharmacies.length === 1 ? 'pharmacy' : 'pharmacies'}`
+            }
+          </p>
+        </div>
         <div className="flex items-center gap-4">
           {/* View Mode Toggle */}
           <div className="btn-group">
