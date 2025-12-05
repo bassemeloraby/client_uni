@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLoaderData, Link } from 'react-router-dom';
+import { useLoaderData, Link, useSearchParams } from 'react-router-dom';
 import { 
   FaChartBar, 
   FaStore, 
@@ -9,14 +9,16 @@ import {
   FaDollarSign,
   FaUser,
   FaShoppingCart,
-  FaBox
+  FaBox,
+  FaFilter
 } from 'react-icons/fa';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { customFetch } from "../../utils";
 
 const url = "detailed-sales/stats/pharmacies-by-branch";
 const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 
-export const loader = async () => {
+export const loader = async ({ request }) => {
   try {
     // Check if user is authenticated
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -28,15 +30,31 @@ export const loader = async () => {
       });
     }
 
+    // Get branchCode from URL params
+    const params = new URL(request.url).searchParams;
+    const branchCode = params.get('branchCode');
+
+    // Fetch pharmacies for dropdown
+    const pharmaciesResponse = await customFetch.get('pharmacies');
+    const pharmacies = pharmaciesResponse.data.success ? pharmaciesResponse.data.data : [];
+
+    // Build sales by name URL with branchCode if provided
+    let salesByNameUrlWithFilter = salesByNameUrl;
+    if (branchCode) {
+      salesByNameUrlWithFilter += `?branchCode=${branchCode}`;
+    }
+
     const [pharmacyStatsResponse, salesByNameResponse] = await Promise.all([
       customFetch.get(url),
-      customFetch.get(salesByNameUrl),
+      customFetch.get(salesByNameUrlWithFilter),
     ]);
     
     if (pharmacyStatsResponse.data.success && salesByNameResponse.data.success) {
       return {
         pharmacyStats: pharmacyStatsResponse.data.data,
         salesByNameStats: salesByNameResponse.data.data,
+        pharmacies,
+        selectedBranchCode: branchCode || null,
       };
     }
     throw new Error("Failed to fetch statistics");
@@ -62,9 +80,13 @@ export const loader = async () => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, pharmacies, selectedBranchCode } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get selected pharmacy name
+  const selectedPharmacy = pharmacies.find(p => p.branchCode === parseInt(selectedBranchCode || 0));
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -81,6 +103,37 @@ const DetailedSalesStatistics = () => {
       maximumFractionDigits: 2,
     }).format(value || 0);
   };
+
+  // Handle pharmacy filter change
+  const handlePharmacyChange = (e) => {
+    const branchCode = e.target.value;
+    if (branchCode) {
+      setSearchParams({ branchCode });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  // Prepare data for pie chart
+  const pieChartData = salesByNameStatistics?.map((stat, index) => ({
+    name: stat.salesName,
+    value: stat.totalSales,
+    percentage: stat.percentage,
+  })) || [];
+
+  // Colors for pie chart
+  const COLORS = [
+    '#3b82f6', // blue
+    '#10b981', // green
+    '#f59e0b', // amber
+    '#ef4444', // red
+    '#8b5cf6', // purple
+    '#ec4899', // pink
+    '#06b6d4', // cyan
+    '#84cc16', // lime
+    '#f97316', // orange
+    '#6366f1', // indigo
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -258,10 +311,37 @@ const DetailedSalesStatistics = () => {
       {/* Sales Name Statistics */}
       <div className="card bg-base-100 shadow-xl mt-8">
         <div className="card-body">
-          <h2 className="card-title mb-4">
-            <FaUser className="text-primary" />
-            Sales by Sales Person
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <h2 className="card-title">
+              <FaUser className="text-primary" />
+              Sales by Sales Person
+              {selectedPharmacy && (
+                <span className="text-lg font-normal text-base-content/70 ml-2">
+                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
+                </span>
+              )}
+            </h2>
+            <div className="form-control w-full md:w-auto">
+              <label className="label">
+                <span className="label-text font-semibold flex items-center gap-2">
+                  <FaFilter className="text-primary" />
+                  Filter by Pharmacy
+                </span>
+              </label>
+              <select
+                className="select select-bordered w-full md:w-64"
+                value={selectedBranchCode || ''}
+                onChange={handlePharmacyChange}
+              >
+                <option value="">All Pharmacies</option>
+                {pharmacies.map((pharmacy) => (
+                  <option key={pharmacy._id} value={pharmacy.branchCode}>
+                    {pharmacy.name} (Branch: {pharmacy.branchCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           
           {salesByNameStatistics && salesByNameStatistics.length > 0 ? (
             <>
@@ -282,110 +362,131 @@ const DetailedSalesStatistics = () => {
                   <div className="stat-value text-2xl">{salesByNameSummary?.totalTransactions || 0}</div>
                 </div>
                 <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Quantity</div>
+                  <div className="stat-title text-xs">Total Units Quantity</div>
                   <div className="stat-value text-2xl">{salesByNameSummary?.totalQuantity || 0}</div>
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr>
-                      <th>Sales Person</th>
-                      <th>Total Sales</th>
-                      <th>% of Total</th>
-                      <th>Transactions</th>
-                      <th>Total Quantity</th>
-                      <th>Net Total</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesByNameStatistics.map((stat) => (
-                      <tr key={stat.salesName} className="hover">
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaUser className="text-primary" />
-                            <span className="font-semibold">{stat.salesName}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-warning" />
-                            <span className="text-lg font-semibold text-success">
-                              {formatCurrency(stat.totalSales)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className="badge badge-primary badge-lg">
-                              {formatPercentage(stat.percentage)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaShoppingCart className="text-info" />
-                            <span className="font-semibold">{stat.totalTransactions}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaBox className="text-primary" />
-                            <span className="font-semibold">{stat.totalQuantity}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-success" />
-                            <span className="font-semibold text-success">
-                              {formatCurrency(stat.totalNetTotal)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <Link
-                            to={`/detailed-sales?salesName=${encodeURIComponent(stat.salesName)}`}
-                            className="btn btn-sm btn-primary gap-2"
-                          >
-                            <FaChartBar />
-                            View Sales
-                          </Link>
-                        </td>
+              {/* Table and Pie Chart Side by Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="table table-zebra w-full">
+                    <thead>
+                      <tr>
+                        <th>Sales Person</th>
+                        <th>Total Sales</th>
+                        <th>% of Total</th>
+                        <th>Transactions</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th>Total</th>
-                      <th>
-                        <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="badge badge-primary badge-lg">100.00%</span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalQuantity, 0)}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalNetTotal, 0))}
-                        </span>
-                      </th>
-                      <th></th>
-                    </tr>
-                  </tfoot>
-                </table>
+                    </thead>
+                    <tbody>
+                      {salesByNameStatistics.map((stat) => (
+                        <tr key={stat.salesName} className="hover">
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <FaUser className="text-primary" />
+                              <span className="font-semibold">{stat.salesName}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <FaDollarSign className="text-warning" />
+                              <span className="text-lg font-semibold text-success">
+                                {formatCurrency(stat.totalSales)}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <span className="badge badge-primary badge-lg">
+                                {formatPercentage(stat.percentage)}%
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <FaShoppingCart className="text-info" />
+                              <span className="font-semibold">{stat.totalTransactions}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <Link
+                              to={`/detailed-sales?salesName=${encodeURIComponent(stat.salesName)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
+                              className="btn btn-sm btn-primary gap-2"
+                            >
+                              <FaChartBar />
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>Total</th>
+                        <th>
+                          <span className="text-lg font-semibold text-success">
+                            {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                          </span>
+                        </th>
+                        <th>
+                          <span className="badge badge-primary badge-lg">100.00%</span>
+                        </th>
+                        <th>
+                          <span className="text-lg font-semibold">
+                            {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                          </span>
+                        </th>
+                        <th></th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Pie Chart */}
+                <div className="card bg-base-200 shadow-md">
+                  <div className="card-body">
+                    <h3 className="card-title text-lg mb-4">
+                      <FaChartBar className="text-primary" />
+                      Sales Distribution
+                    </h3>
+                    {pieChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                          <Pie
+                            data={pieChartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
+                            outerRadius={120}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => formatCurrency(value)}
+                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
+                          />
+                          <Legend 
+                            verticalAlign="bottom" 
+                            height={36}
+                            formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-96">
+                        <p className="text-base-content/70">No data available for chart</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </>
           ) : (
@@ -394,7 +495,7 @@ const DetailedSalesStatistics = () => {
                 No sales person statistics available
               </p>
               <p className="text-base-content/50">
-                No sales records found
+                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
               </p>
             </div>
           )}
