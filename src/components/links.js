@@ -9,7 +9,10 @@ export const mainPages = [
   {
     id: nanoid(),
     text: "Pharmacies",
-    ping: [{ id: nanoid(), linkName: "Pharmacies", link: "/pharmacies" }],
+    ping: [
+      { id: nanoid(), linkName: "Pharmacies", link: "/pharmacies" },
+      { id: nanoid(), linkName: "Assignments", link: "/pharmacies/assignments" },
+    ],
   },
   {
     id: nanoid(),

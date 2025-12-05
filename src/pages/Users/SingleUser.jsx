@@ -1,5 +1,5 @@
-import React from 'react';
-import { useLoaderData, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLoaderData, Link, useNavigate } from 'react-router-dom';
 import {
   FaUser,
   FaEnvelope,
@@ -11,8 +11,10 @@ import {
   FaEdit,
   FaShieldAlt,
   FaWhatsapp,
+  FaTrash,
 } from 'react-icons/fa';
 import { customFetch } from '../../utils';
+import { toast } from 'react-toastify';
 
 export const loader = async ({ params }) => {
   try {
@@ -29,6 +31,9 @@ export const loader = async ({ params }) => {
 
 const SingleUser = () => {
   const user = useLoaderData();
+  const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   if (!user) {
     return (
@@ -51,6 +56,23 @@ const SingleUser = () => {
       user: 'badge-info',
     };
     return roleColors[role] || 'badge-ghost';
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await customFetch.delete(`users/${user._id}`);
+      
+      if (response.data.success) {
+        toast.success(`User ${user.firstName} ${user.lastName} deleted successfully!`);
+        navigate('/users');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to delete user. Please try again.';
+      toast.error(errorMessage);
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
   };
 
   // Format WhatsApp number for link
@@ -89,14 +111,66 @@ const SingleUser = () => {
           <FaArrowLeft className="h-4 w-4" />
           Back to Users
         </Link>
-        <Link
-          to={`/users/${user._id}/edit`}
-          className="btn btn-primary gap-2"
-        >
-          <FaEdit className="h-4 w-4" />
-          Edit User
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to={`/users/${user._id}/edit`}
+            className="btn btn-primary gap-2"
+          >
+            <FaEdit className="h-4 w-4" />
+            Edit User
+          </Link>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="btn btn-error gap-2"
+            disabled={isDeleting}
+          >
+            <FaTrash className="h-4 w-4" />
+            Delete User
+          </button>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error mb-4">Delete User</h3>
+            <p className="py-4">
+              Are you sure you want to delete <strong>{user.firstName} {user.lastName}</strong>?
+            </p>
+            <p className="text-sm text-base-content/70 mb-4">
+              This action cannot be undone. All data associated with this user will be permanently deleted.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error gap-2"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <FaTrash className="h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => !isDeleting && setShowDeleteModal(false)}></div>
+        </div>
+      )}
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">

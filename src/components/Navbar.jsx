@@ -20,15 +20,25 @@ const Navbar = () => {
         if (section.text === "Settings" && !isAdmin) {
           return false;
         }
-        // Hide Pharmacies and Sales for non-authenticated users
-        if (!user && (section.text === "Pharmacies" || section.text === "Sales")) {
+        // Hide Sales for non-admin users
+        if (section.text === "Sales" && !isAdmin) {
+          return false;
+        }
+        // Hide Pharmacies for non-authenticated users
+        if (!user && section.text === "Pharmacies") {
           return false;
         }
         return true;
       })
       .map((section) => ({
         ...section,
-        ping: section.ping || [],
+        ping: (section.ping || []).filter((link) => {
+          // Hide Assignments link for non-admin users
+          if (link.linkName === "Assignments" && !isAdmin) {
+            return false;
+          }
+          return true;
+        }),
       }));
   }, [isAdmin, user]);
 

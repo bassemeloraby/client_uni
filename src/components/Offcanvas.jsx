@@ -77,14 +77,29 @@ const Offcanvas = ({ isOpen, setIsOpen }) => {
             if (mainPage.text === "Settings" && !isAdmin) {
               return null;
             }
-            // Hide Pharmacies and Sales for non-authenticated users
-            if (!user && (mainPage.text === "Pharmacies" || mainPage.text === "Sales")) {
+            // Hide Sales for non-admin users
+            if (mainPage.text === "Sales" && !isAdmin) {
               return null;
             }
+            // Hide Pharmacies for non-authenticated users
+            if (!user && mainPage.text === "Pharmacies") {
+              return null;
+            }
+            // Filter sub-links for non-admin users
+            const filteredMainPage = {
+              ...mainPage,
+              ping: (mainPage.ping || []).filter((link) => {
+                // Hide Assignments link for non-admin users
+                if (link.linkName === "Assignments" && !isAdmin) {
+                  return false;
+                }
+                return true;
+              }),
+            };
             return (
               <LinkComponent 
                 key={mi} 
-                mainPage={mainPage} 
+                mainPage={filteredMainPage} 
                 setIsOpen={setIsOpen} 
                 icon={getIconForPage(mainPage.text)}
               />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useLoaderData, Link } from 'react-router-dom';
-import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList, FaSearch } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList, FaSearch, FaTable } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 const url = "pharmacies";
 
@@ -45,6 +46,8 @@ export const loader = async ({ request }) => {
 
 const Pharmacies = () => {
   const pharmacies = useLoaderData();
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userRole?.toLowerCase() === 'admin';
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list'
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -75,13 +78,26 @@ const Pharmacies = () => {
               <FaTh className="h-5 w-5" />
             </button>
           </div>
-          <Link
-            to="/pharmacies/create"
-            className="btn btn-primary gap-2"
-          >
-            <FaPlus className="h-5 w-5" />
-            Create Pharmacy
-          </Link>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <>
+                <Link
+                  to="/pharmacies/assignments"
+                  className="btn btn-secondary gap-2"
+                >
+                  <FaTable className="h-5 w-5" />
+                  View Assignments
+                </Link>
+                <Link
+                  to="/pharmacies/create"
+                  className="btn btn-primary gap-2"
+                >
+                  <FaPlus className="h-5 w-5" />
+                  Create Pharmacy
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -297,7 +313,7 @@ const Pharmacies = () => {
                 Clear Search
               </button>
             )}
-            {!searchTerm && (
+            {!searchTerm && isAdmin && (
               <Link to="/pharmacies/create" className="btn btn-primary gap-2">
                 <FaPlus className="h-5 w-5" />
                 Create Your First Pharmacy
@@ -308,10 +324,12 @@ const Pharmacies = () => {
       ) : (
         <div className="text-center py-12">
           <p className="text-2xl text-base-content/70 mb-4">No pharmacies found</p>
-          <Link to="/pharmacies/create" className="btn btn-primary gap-2">
-            <FaPlus className="h-5 w-5" />
-            Create Your First Pharmacy
-          </Link>
+          {isAdmin && (
+            <Link to="/pharmacies/create" className="btn btn-primary gap-2">
+              <FaPlus className="h-5 w-5" />
+              Create Your First Pharmacy
+            </Link>
+          )}
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLoaderData, Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   FaMapMarkerAlt,
   FaPhone,
@@ -36,6 +37,8 @@ export const loader = async ({ params }) => {
 const SinglePharmacy = () => {
   const pharmacy = useLoaderData();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.userRole?.toLowerCase() === 'admin';
   const [showPharmacistModal, setShowPharmacistModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [pharmacistToRemove, setPharmacistToRemove] = useState(null);
@@ -162,13 +165,15 @@ const SinglePharmacy = () => {
             <FaChartBar className="h-4 w-4" />
             Reports
           </Link>
-          <Link
-            to={`/pharmacies/${pharmacy._id}/edit`}
-            className="btn btn-primary gap-2"
-          >
-            <FaEdit className="h-4 w-4" />
-            Edit Pharmacy
-          </Link>
+          {isAdmin && (
+            <Link
+              to={`/pharmacies/${pharmacy._id}/edit`}
+              className="btn btn-primary gap-2"
+            >
+              <FaEdit className="h-4 w-4" />
+              Edit Pharmacy
+            </Link>
+          )}
         </div>
       </div>
 
@@ -358,14 +363,16 @@ const SinglePharmacy = () => {
                 <FaUser className="text-primary" />
                 Assigned Pharmacists {pharmacy.pharmacists?.length > 0 && `(${pharmacy.pharmacists.length})`}
               </h2>
-              <button
-                onClick={() => setShowPharmacistModal(true)}
-                className="btn btn-sm btn-primary gap-2"
-                disabled={isAssigning}
-              >
-                <FaUserPlus />
-                Add Pharmacist
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowPharmacistModal(true)}
+                  className="btn btn-sm btn-primary gap-2"
+                  disabled={isAssigning}
+                >
+                  <FaUserPlus />
+                  Add Pharmacist
+                </button>
+              )}
             </div>
             {pharmacy.pharmacists && pharmacy.pharmacists.length > 0 ? (
               <div className="space-y-3">
@@ -427,18 +434,20 @@ const SinglePharmacy = () => {
                           )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          setPharmacistToRemove(pharmacist);
-                          setShowRemoveModal(true);
-                        }}
-                        className="btn btn-sm btn-ghost text-error gap-2"
-                        disabled={isAssigning}
-                        title="Remove pharmacist"
-                      >
-                        <FaTimes />
-                        Remove
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            setPharmacistToRemove(pharmacist);
+                            setShowRemoveModal(true);
+                          }}
+                          className="btn btn-sm btn-ghost text-error gap-2"
+                          disabled={isAssigning}
+                          title="Remove pharmacist"
+                        >
+                          <FaTimes />
+                          Remove
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

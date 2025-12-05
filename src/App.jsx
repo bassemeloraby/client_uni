@@ -5,6 +5,7 @@ import { HomeLayout, Error,
   EditPharmacy,
   SinglePharmacy,
   PharmacyReports,
+  PharmacyAssignments,
   UsersPage,
   CreateUser,
   EditUser,
@@ -24,6 +25,7 @@ import { loader as pharmaciesLoader } from "./pages/Pharmacies/Pharmacies.jsx";
 import { loader as singlePharmacyLoader } from "./pages/Pharmacies/SinglePharmacy.jsx";
 import { loader as editPharmacyLoader } from "./pages/Pharmacies/EditPharmacy.jsx";
 import { loader as pharmacyReportsLoader } from "./pages/Pharmacies/PharmacyReports.jsx";
+import { loader as pharmacyAssignmentsLoader } from "./pages/Pharmacies/PharmacyAssignments.jsx";
 import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
@@ -51,17 +53,17 @@ const router = createBrowserRouter([{
     {
       path: "pharmacies/create",
       element: (
-        <ProtectedRoute>
+        <AdminRoute>
           <CreatePharmacy />
-        </ProtectedRoute>
+        </AdminRoute>
       ),
     },
     {
       path: "pharmacies/:id/edit",
       element: (
-        <ProtectedRoute>
+        <AdminRoute>
           <EditPharmacy />
-        </ProtectedRoute>
+        </AdminRoute>
       ),
       loader: editPharmacyLoader,
     },
@@ -82,6 +84,15 @@ const router = createBrowserRouter([{
         </ProtectedRoute>
       ),
       loader: singlePharmacyLoader,
+    },
+    {
+      path: "pharmacies/assignments",
+      element: (
+        <AdminRoute>
+          <PharmacyAssignments />
+        </AdminRoute>
+      ),
+      loader: pharmacyAssignmentsLoader,
     },
     {
       path: "users",
@@ -121,18 +132,18 @@ const router = createBrowserRouter([{
     {
       path: "detailed-sales",
       element: (
-        <ProtectedRoute>
+        <AdminRoute>
           <DetailedSalesPage />
-        </ProtectedRoute>
+        </AdminRoute>
       ),
       loader: detailedSalesLoader,
     },
     {
       path: "detailed-sales/statistics",
       element: (
-        <ProtectedRoute>
+        <AdminRoute>
           <DetailedSalesStatistics />
-        </ProtectedRoute>
+        </AdminRoute>
       ),
       loader: detailedSalesStatisticsLoader,
     },
