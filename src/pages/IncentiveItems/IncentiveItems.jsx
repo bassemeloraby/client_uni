@@ -14,7 +14,9 @@ import {
   FaSortAmountDown,
   FaRedo,
   FaImage,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaArrowUp,
+  FaArrowDown
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -98,7 +100,7 @@ const IncentiveItems = () => {
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
-  const sortByIncentiveValue = searchParams.get('sortByIncentiveValue') === 'true';
+  const sortByIncentiveValue = searchParams.get('sortByIncentiveValue') || '';
   const [subCategorySearch, setSubCategorySearch] = useState('');
   const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
   const [filters, setFilters] = useState({
@@ -151,12 +153,15 @@ const IncentiveItems = () => {
   // Toggle sort by incentive value (updates URL to trigger backend sorting)
   const handleSortByIncentiveValue = () => {
     const params = new URLSearchParams(searchParams);
-    const currentSort = params.get('sortByIncentiveValue') === 'true';
+    const currentSort = params.get('sortByIncentiveValue');
     
-    if (currentSort) {
-      params.delete('sortByIncentiveValue');
+    // Cycle through: no sort -> desc -> asc -> no sort
+    if (!currentSort || currentSort === '') {
+      params.set('sortByIncentiveValue', 'desc');
+    } else if (currentSort === 'desc') {
+      params.set('sortByIncentiveValue', 'asc');
     } else {
-      params.set('sortByIncentiveValue', 'true');
+      params.delete('sortByIncentiveValue');
     }
     
     // Reset to page 1 when changing sort
@@ -258,14 +263,6 @@ const IncentiveItems = () => {
               Reset Filters
             </button>
           )}
-          <button
-            className={`btn gap-2 ${sortByIncentiveValue ? 'btn-primary' : 'btn-outline'}`}
-            onClick={handleSortByIncentiveValue}
-            title="Sort by Incentive Value (Largest to Lowest)"
-          >
-            <FaSortAmountDown className="h-5 w-5" />
-            Sort by Value
-          </button>
           <button
             className="btn btn-outline gap-2"
             onClick={() => setShowFilters(!showFilters)}
@@ -539,7 +536,27 @@ const IncentiveItems = () => {
                 <th>Sub Category</th>
                 <th>Price</th>
                 <th>Incentive %</th>
-                <th>Incentive Value</th>
+                <th 
+                  className="cursor-pointer hover:bg-base-200 select-none"
+                  onClick={handleSortByIncentiveValue}
+                  title="Click to sort by Incentive Value"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Incentive Value</span>
+                    <div className="flex flex-col">
+                      {sortByIncentiveValue === 'asc' ? (
+                        <FaArrowUp className="text-primary text-xs" />
+                      ) : sortByIncentiveValue === 'desc' ? (
+                        <FaArrowDown className="text-primary text-xs" />
+                      ) : (
+                        <div className="flex flex-col gap-0.5 opacity-30">
+                          <FaArrowUp className="text-xs" />
+                          <FaArrowDown className="text-xs -mt-1" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
