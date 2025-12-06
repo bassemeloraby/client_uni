@@ -12,6 +12,7 @@ import { HomeLayout, Error,
   SingleUser,
   DetailedSalesPage,
   DetailedSalesStatistics,
+  IncentiveItemsPage,
   Landing
 } from "./pages";
 
@@ -32,6 +33,7 @@ import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
 import { loader as detailedSalesStatisticsLoader } from "./pages/DetailedSales/DetailedSalesStatistics.jsx";
+import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -147,6 +149,15 @@ const router = createBrowserRouter([{
         </AdminOrSupervisorRoute>
       ),
       loader: detailedSalesStatisticsLoader,
+    },
+    {
+      path: "incentive-items",
+      element: (
+        <AdminRoute>
+          <IncentiveItemsPage />
+        </AdminRoute>
+      ),
+      loader: incentiveItemsLoader,
     },
   ],
 },
