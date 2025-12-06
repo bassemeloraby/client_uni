@@ -11,7 +11,8 @@ import {
   FaTag,
   FaBox,
   FaLayerGroup,
-  FaSortAmountDown
+  FaSortAmountDown,
+  FaRedo
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -175,7 +176,7 @@ const IncentiveItems = () => {
     navigate(`/incentive-items?${params.toString()}`);
   };
 
-  // Clear filters
+  // Clear filters and reset sort
   const clearFilters = () => {
     setFilters({
       Class: '',
@@ -186,6 +187,7 @@ const IncentiveItems = () => {
       maxPrice: '',
     });
     setSearchTerm('');
+    setSortByIncentiveValue(false);
     navigate('/incentive-items');
   };
 
@@ -221,6 +223,16 @@ const IncentiveItems = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          {hasActiveFilters && (
+            <button
+              className="btn btn-error gap-2"
+              onClick={clearFilters}
+              title="Reset all filters and sorting"
+            >
+              <FaRedo className="h-5 w-5" />
+              Reset Filters
+            </button>
+          )}
           <button
             className={`btn gap-2 ${sortByIncentiveValue ? 'btn-primary' : 'btn-outline'}`}
             onClick={handleSortByIncentiveValue}
