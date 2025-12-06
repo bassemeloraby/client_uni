@@ -96,6 +96,8 @@ const IncentiveItems = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
   const [sortByIncentiveValue, setSortByIncentiveValue] = useState(false);
+  const [subCategorySearch, setSubCategorySearch] = useState('');
+  const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
   const [filters, setFilters] = useState({
     Class: searchParams.get('Class') || '',
     Category: searchParams.get('Category') || '',
@@ -166,6 +168,8 @@ const IncentiveItems = () => {
     if (searchTerm) params.append('search', searchTerm);
     params.append('page', '1'); // Reset to first page when applying filters
     
+    setShowSubCategoryDropdown(false);
+    setSubCategorySearch('');
     navigate(`/incentive-items?${params.toString()}`);
   };
   
@@ -187,6 +191,8 @@ const IncentiveItems = () => {
       maxPrice: '',
     });
     setSearchTerm('');
+    setSubCategorySearch('');
+    setShowSubCategoryDropdown(false);
     setSortByIncentiveValue(false);
     navigate('/incentive-items');
   };
@@ -199,6 +205,18 @@ const IncentiveItems = () => {
   const uniqueCategories = [...new Set(items.map(item => item.Category).filter(Boolean))].sort();
   const uniqueSubCategories = [...new Set(items.map(item => item['Sub category']).filter(Boolean))].sort();
   const uniqueDivisions = [...new Set(items.map(item => item.Division).filter(Boolean))].sort();
+  
+  // Filter sub categories based on search
+  const filteredSubCategories = uniqueSubCategories.filter(subCat =>
+    subCat.toLowerCase().includes(subCategorySearch.toLowerCase())
+  );
+  
+  // Handle sub category selection
+  const handleSubCategorySelect = (value) => {
+    setFilters({ ...filters, 'Sub category': value });
+    setSubCategorySearch(value || '');
+    setShowSubCategoryDropdown(false);
+  };
 
   if (error) {
     return (
@@ -329,21 +347,96 @@ const IncentiveItems = () => {
                 </select>
               </div>
 
-              {/* Sub Category */}
+              {/* Sub Category - Searchable */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Sub Category</span>
                 </label>
-                <select
-                  className="select select-bordered"
-                  value={filters['Sub category']}
-                  onChange={(e) => setFilters({ ...filters, 'Sub category': e.target.value })}
-                >
-                  <option value="">All Sub Categories</option>
-                  {uniqueSubCategories.map(subCat => (
-                    <option key={subCat} value={subCat}>{subCat}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      placeholder="Search or select sub category..."
+                      className="input input-bordered w-full"
+                      value={subCategorySearch || filters['Sub category'] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSubCategorySearch(value);
+                        setShowSubCategoryDropdown(true);
+                        // Clear filter if input is cleared
+                        if (value === '') {
+                          setFilters({ ...filters, 'Sub category': '' });
+                        }
+                      }}
+                      onFocus={() => {
+                        setShowSubCategoryDropdown(true);
+                        // Show search term or current filter value
+                        if (filters['Sub category']) {
+                          setSubCategorySearch(filters['Sub category']);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Only close if not clicking on dropdown
+                        const relatedTarget = e.relatedTarget;
+                        if (!relatedTarget || !relatedTarget.closest('.sub-category-dropdown')) {
+                          setTimeout(() => {
+                            setShowSubCategoryDropdown(false);
+                            // If no selection made, reset search to show selected value
+                            if (filters['Sub category'] && subCategorySearch !== filters['Sub category']) {
+                              setSubCategorySearch('');
+                            }
+                          }, 200);
+                        }
+                      }}
+                    />
+                    {filters['Sub category'] && (
+                      <button
+                        className="btn btn-square btn-ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSubCategorySelect('');
+                        }}
+                      >
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+                  {showSubCategoryDropdown && (filteredSubCategories.length > 0 || !subCategorySearch) && (
+                    <div className="sub-category-dropdown absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div
+                        className="px-4 py-2 cursor-pointer hover:bg-base-200"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSubCategorySelect('');
+                        }}
+                      >
+                        <span className="text-sm">All Sub Categories</span>
+                      </div>
+                      {filteredSubCategories.map(subCat => (
+                        <div
+                          key={subCat}
+                          className={`px-4 py-2 cursor-pointer hover:bg-base-200 ${
+                            filters['Sub category'] === subCat ? 'bg-primary text-primary-content' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSubCategorySelect(subCat);
+                          }}
+                        >
+                          <span className="text-sm">{subCat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {showSubCategoryDropdown && subCategorySearch && filteredSubCategories.length === 0 && (
+                    <div className="sub-category-dropdown absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg">
+                      <div className="px-4 py-2 text-sm text-base-content/70">
+                        No sub categories found
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Division */}
