@@ -10,7 +10,8 @@ import {
   FaDollarSign,
   FaTag,
   FaBox,
-  FaLayerGroup
+  FaLayerGroup,
+  FaSortAmountDown
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -93,6 +94,7 @@ const IncentiveItems = () => {
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
+  const [sortByIncentiveValue, setSortByIncentiveValue] = useState(false);
   const [filters, setFilters] = useState({
     Class: searchParams.get('Class') || '',
     Category: searchParams.get('Category') || '',
@@ -131,6 +133,26 @@ const IncentiveItems = () => {
   const formatPercentage = (value) => {
     return `${(value * 100).toFixed(2)}%`;
   };
+
+  // Sort items by incentive value (largest to lowest)
+  const handleSortByIncentiveValue = () => {
+    setSortByIncentiveValue(!sortByIncentiveValue);
+  };
+
+  // Get sorted items
+  const getSortedItems = () => {
+    if (!sortByIncentiveValue) {
+      return items;
+    }
+    // Sort by incentive value (largest to lowest)
+    return [...items].sort((a, b) => {
+      const valueA = a['incentive value'] || 0;
+      const valueB = b['incentive value'] || 0;
+      return valueB - valueA; // Descending order (largest to lowest)
+    });
+  };
+
+  const sortedItems = getSortedItems();
 
   // Apply filters (reset to page 1)
   const applyFilters = () => {
@@ -199,6 +221,14 @@ const IncentiveItems = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            className={`btn gap-2 ${sortByIncentiveValue ? 'btn-primary' : 'btn-outline'}`}
+            onClick={handleSortByIncentiveValue}
+            title="Sort by Incentive Value (Largest to Lowest)"
+          >
+            <FaSortAmountDown className="h-5 w-5" />
+            Sort by Value
+          </button>
           <button
             className="btn btn-outline gap-2"
             onClick={() => setShowFilters(!showFilters)}
@@ -385,7 +415,7 @@ const IncentiveItems = () => {
       </div>
 
       {/* Items Table */}
-      {items && items.length > 0 ? (
+      {sortedItems && sortedItems.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table table-zebra w-full">
             <thead>
@@ -402,7 +432,7 @@ const IncentiveItems = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {sortedItems.map((item) => (
                 <tr key={item._id} className="hover">
                   <td>
                     <div className="flex items-center gap-2">
@@ -450,11 +480,11 @@ const IncentiveItems = () => {
               <tr>
                 <th colSpan="6" className="text-right">Total:</th>
                 <th className="text-success">
-                  {formatCurrency(items.reduce((sum, item) => sum + (item.Price || 0), 0))}
+                  {formatCurrency(sortedItems.reduce((sum, item) => sum + (item.Price || 0), 0))}
                 </th>
                 <th></th>
                 <th className="text-success">
-                  {formatCurrency(items.reduce((sum, item) => sum + (item['incentive value'] || 0), 0))}
+                  {formatCurrency(sortedItems.reduce((sum, item) => sum + (item['incentive value'] || 0), 0))}
                 </th>
               </tr>
             </tfoot>
