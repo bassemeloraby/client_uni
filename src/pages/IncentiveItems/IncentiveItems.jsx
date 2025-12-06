@@ -46,6 +46,7 @@ export const loader = async ({ request }) => {
     if (params.get('minPrice')) queryParams.minPrice = params.get('minPrice');
     if (params.get('maxPrice')) queryParams.maxPrice = params.get('maxPrice');
     if (params.get('sortByIncentiveValue')) queryParams.sortByIncentiveValue = params.get('sortByIncentiveValue');
+    if (params.get('sortByPrice')) queryParams.sortByPrice = params.get('sortByPrice');
     
     // Pagination
     const page = parseInt(params.get('page')) || 1;
@@ -101,6 +102,7 @@ const IncentiveItems = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
   const sortByIncentiveValue = searchParams.get('sortByIncentiveValue') || '';
+  const sortByPrice = searchParams.get('sortByPrice') || '';
   const [subCategorySearch, setSubCategorySearch] = useState('');
   const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
   const [filters, setFilters] = useState({
@@ -155,6 +157,9 @@ const IncentiveItems = () => {
     const params = new URLSearchParams(searchParams);
     const currentSort = params.get('sortByIncentiveValue');
     
+    // Clear Price sort when sorting by Incentive Value
+    params.delete('sortByPrice');
+    
     // Cycle through: no sort -> desc -> asc -> no sort
     if (!currentSort || currentSort === '') {
       params.set('sortByIncentiveValue', 'desc');
@@ -162,6 +167,29 @@ const IncentiveItems = () => {
       params.set('sortByIncentiveValue', 'asc');
     } else {
       params.delete('sortByIncentiveValue');
+    }
+    
+    // Reset to page 1 when changing sort
+    params.set('page', '1');
+    
+    navigate(`/incentive-items?${params.toString()}`);
+  };
+
+  // Toggle sort by price (updates URL to trigger backend sorting)
+  const handleSortByPrice = () => {
+    const params = new URLSearchParams(searchParams);
+    const currentSort = params.get('sortByPrice');
+    
+    // Clear Incentive Value sort when sorting by Price
+    params.delete('sortByIncentiveValue');
+    
+    // Cycle through: no sort -> desc -> asc -> no sort
+    if (!currentSort || currentSort === '') {
+      params.set('sortByPrice', 'desc');
+    } else if (currentSort === 'desc') {
+      params.set('sortByPrice', 'asc');
+    } else {
+      params.delete('sortByPrice');
     }
     
     // Reset to page 1 when changing sort
@@ -534,7 +562,27 @@ const IncentiveItems = () => {
                 <th>Division</th>
                 <th>Category</th>
                 <th>Sub Category</th>
-                <th>Price</th>
+                <th 
+                  className="cursor-pointer hover:bg-base-200 select-none"
+                  onClick={handleSortByPrice}
+                  title="Click to sort by Price"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Price</span>
+                    <div className="flex flex-col">
+                      {sortByPrice === 'asc' ? (
+                        <FaArrowUp className="text-primary text-xs" />
+                      ) : sortByPrice === 'desc' ? (
+                        <FaArrowDown className="text-primary text-xs" />
+                      ) : (
+                        <div className="flex flex-col gap-0.5 opacity-30">
+                          <FaArrowUp className="text-xs" />
+                          <FaArrowDown className="text-xs -mt-1" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </th>
                 <th>Incentive %</th>
                 <th 
                   className="cursor-pointer hover:bg-base-200 select-none"
