@@ -12,7 +12,9 @@ import {
   FaBox,
   FaLayerGroup,
   FaSortAmountDown,
-  FaRedo
+  FaRedo,
+  FaImage,
+  FaExternalLinkAlt
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -41,6 +43,7 @@ export const loader = async ({ request }) => {
     if (params.get('search')) queryParams.search = params.get('search');
     if (params.get('minPrice')) queryParams.minPrice = params.get('minPrice');
     if (params.get('maxPrice')) queryParams.maxPrice = params.get('maxPrice');
+    if (params.get('sortByIncentiveValue')) queryParams.sortByIncentiveValue = params.get('sortByIncentiveValue');
     
     // Pagination
     const page = parseInt(params.get('page')) || 1;
@@ -95,7 +98,7 @@ const IncentiveItems = () => {
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
-  const [sortByIncentiveValue, setSortByIncentiveValue] = useState(false);
+  const sortByIncentiveValue = searchParams.get('sortByIncentiveValue') === 'true';
   const [subCategorySearch, setSubCategorySearch] = useState('');
   const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
   const [filters, setFilters] = useState({
@@ -137,25 +140,30 @@ const IncentiveItems = () => {
     return `${(value * 100).toFixed(2)}%`;
   };
 
-  // Sort items by incentive value (largest to lowest)
+  // Open Google image search for description
+  const openGoogleImageSearch = (description) => {
+    if (!description) return;
+    const searchQuery = encodeURIComponent(description);
+    const googleImageUrl = `https://www.google.com/search?tbm=isch&q=${searchQuery}`;
+    window.open(googleImageUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Toggle sort by incentive value (updates URL to trigger backend sorting)
   const handleSortByIncentiveValue = () => {
-    setSortByIncentiveValue(!sortByIncentiveValue);
-  };
-
-  // Get sorted items
-  const getSortedItems = () => {
-    if (!sortByIncentiveValue) {
-      return items;
+    const params = new URLSearchParams(searchParams);
+    const currentSort = params.get('sortByIncentiveValue') === 'true';
+    
+    if (currentSort) {
+      params.delete('sortByIncentiveValue');
+    } else {
+      params.set('sortByIncentiveValue', 'true');
     }
-    // Sort by incentive value (largest to lowest)
-    return [...items].sort((a, b) => {
-      const valueA = a['incentive value'] || 0;
-      const valueB = b['incentive value'] || 0;
-      return valueB - valueA; // Descending order (largest to lowest)
-    });
+    
+    // Reset to page 1 when changing sort
+    params.set('page', '1');
+    
+    navigate(`/incentive-items?${params.toString()}`);
   };
-
-  const sortedItems = getSortedItems();
 
   // Apply filters (reset to page 1)
   const applyFilters = () => {
@@ -193,7 +201,6 @@ const IncentiveItems = () => {
     setSearchTerm('');
     setSubCategorySearch('');
     setShowSubCategoryDropdown(false);
-    setSortByIncentiveValue(false);
     navigate('/incentive-items');
   };
 
@@ -520,14 +527,13 @@ const IncentiveItems = () => {
       </div>
 
       {/* Items Table */}
-      {sortedItems && sortedItems.length > 0 ? (
+      {items && items.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table table-zebra w-full">
             <thead>
               <tr>
                 <th>SAP Code</th>
                 <th>Description</th>
-                <th>Class</th>
                 <th>Division</th>
                 <th>Category</th>
                 <th>Sub Category</th>
@@ -537,7 +543,7 @@ const IncentiveItems = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedItems.map((item) => (
+              {items.map((item) => (
                 <tr key={item._id} className="hover">
                   <td>
                     <div className="flex items-center gap-2">
@@ -547,11 +553,19 @@ const IncentiveItems = () => {
                   </td>
                   <td>
                     <div className="max-w-xs">
-                      <div className="font-semibold">{item.Description}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold">{item.Description}</div>
+                        {item.Description && (
+                          <button
+                            onClick={() => openGoogleImageSearch(item.Description)}
+                            className="btn btn-ghost btn-xs p-1 h-auto min-h-0"
+                            title={`Search images for: ${item.Description}`}
+                          >
+                            <FaImage className="text-primary text-xs" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </td>
-                  <td>
-                    <span className="badge badge-outline">{item.Class || '-'}</span>
                   </td>
                   <td>
                     <div className="flex items-center gap-2">
@@ -583,13 +597,13 @@ const IncentiveItems = () => {
             </tbody>
             <tfoot>
               <tr>
-                <th colSpan="6" className="text-right">Total:</th>
+                <th colSpan="5" className="text-right">Total:</th>
                 <th className="text-success">
-                  {formatCurrency(sortedItems.reduce((sum, item) => sum + (item.Price || 0), 0))}
+                  {formatCurrency(items.reduce((sum, item) => sum + (item.Price || 0), 0))}
                 </th>
                 <th></th>
                 <th className="text-success">
-                  {formatCurrency(sortedItems.reduce((sum, item) => sum + (item['incentive value'] || 0), 0))}
+                  {formatCurrency(items.reduce((sum, item) => sum + (item['incentive value'] || 0), 0))}
                 </th>
               </tr>
             </tfoot>
