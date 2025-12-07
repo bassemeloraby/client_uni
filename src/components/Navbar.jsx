@@ -21,8 +21,8 @@ const Navbar = () => {
         if (section.text === "Settings" && !isAdmin) {
           return false;
         }
-        // Hide Sales for non-admin and non-supervisor users
-        if (section.text === "Sales" && !isAdmin && !isSupervisor) {
+        // Hide Sales for non-admin users (only admins can access sales now)
+        if (section.text === "Sales" && !isAdmin) {
           return false;
         }
         // Hide Pharmacies for non-authenticated users

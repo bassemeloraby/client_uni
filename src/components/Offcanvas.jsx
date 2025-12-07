@@ -78,8 +78,8 @@ const Offcanvas = ({ isOpen, setIsOpen }) => {
             if (mainPage.text === "Settings" && !isAdmin) {
               return null;
             }
-            // Hide Sales for non-admin and non-supervisor users
-            if (mainPage.text === "Sales" && !isAdmin && !isSupervisor) {
+            // Hide Sales for non-admin users (only admins can access sales now)
+            if (mainPage.text === "Sales" && !isAdmin) {
               return null;
             }
             // Hide Pharmacies for non-authenticated users

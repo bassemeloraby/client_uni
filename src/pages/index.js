@@ -23,3 +23,6 @@ export { default as DetailedSalesStatistics } from "./DetailedSales/DetailedSale
 
 /** Incentive Items */
 export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";
+
+/** Contests */
+export { default as ContestsPage } from "./Contests/Contests";

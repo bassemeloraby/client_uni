@@ -13,6 +13,7 @@ import { HomeLayout, Error,
   DetailedSalesPage,
   DetailedSalesStatistics,
   IncentiveItemsPage,
+  ContestsPage,
   Landing
 } from "./pages";
 
@@ -34,6 +35,7 @@ import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
 import { loader as detailedSalesStatisticsLoader } from "./pages/DetailedSales/DetailedSalesStatistics.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
+import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -135,18 +137,18 @@ const router = createBrowserRouter([{
     {
       path: "detailed-sales",
       element: (
-        <AdminOrSupervisorRoute>
+        <AdminRoute>
           <DetailedSalesPage />
-        </AdminOrSupervisorRoute>
+        </AdminRoute>
       ),
       loader: detailedSalesLoader,
     },
     {
       path: "detailed-sales/statistics",
       element: (
-        <AdminOrSupervisorRoute>
+        <AdminRoute>
           <DetailedSalesStatistics />
-        </AdminOrSupervisorRoute>
+        </AdminRoute>
       ),
       loader: detailedSalesStatisticsLoader,
     },
@@ -158,6 +160,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: incentiveItemsLoader,
+    },
+    {
+      path: "contests",
+      element: (
+        <AdminRoute>
+          <ContestsPage />
+        </AdminRoute>
+      ),
+      loader: contestsLoader,
     },
   ],
 },
