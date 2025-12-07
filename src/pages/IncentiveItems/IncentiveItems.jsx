@@ -118,18 +118,57 @@ const IncentiveItems = () => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, total);
 
+  // Helper function to get subcategories for a category
+  const getSubCategoriesForCategory = (category) => {
+    if (!category) {
+      // If no category selected, show all subcategories
+      return [...new Set(items.map(item => item['Sub category']).filter(Boolean))].sort();
+    }
+    // Filter items by category, then get unique subcategories
+    return [...new Set(
+      items
+        .filter(item => item.Category === category)
+        .map(item => item['Sub category'])
+        .filter(Boolean)
+    )].sort();
+  };
+
   // Update state when URL params change
   useEffect(() => {
     setSearchTerm(searchParams.get('search') || '');
+    const category = searchParams.get('Category') || '';
+    const subCategory = searchParams.get('Sub category') || '';
+    
+    // Validate that subcategory belongs to the selected category
+    let validSubCategory = subCategory;
+    if (category && subCategory) {
+      const validSubCategories = getSubCategoriesForCategory(category);
+      if (!validSubCategories.includes(subCategory)) {
+        validSubCategory = ''; // Reset if subcategory doesn't belong to category
+      }
+    }
+    
     setFilters({
       Class: searchParams.get('Class') || '',
-      Category: searchParams.get('Category') || '',
-      'Sub category': searchParams.get('Sub category') || '',
+      Category: category,
+      'Sub category': validSubCategory,
       Division: searchParams.get('Division') || '',
       minPrice: searchParams.get('minPrice') || '',
       maxPrice: searchParams.get('maxPrice') || '',
     });
-  }, [searchParams]);
+  }, [searchParams, items]);
+
+  // Validate subcategory when category changes (handles programmatic changes)
+  useEffect(() => {
+    if (filters.Category && filters['Sub category']) {
+      const validSubCategories = getSubCategoriesForCategory(filters.Category);
+      if (!validSubCategories.includes(filters['Sub category'])) {
+        // Reset subcategory if it doesn't belong to the selected category
+        setFilters(prev => ({ ...prev, 'Sub category': '' }));
+        setSubCategorySearch('');
+      }
+    }
+  }, [filters.Category, items]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -243,8 +282,10 @@ const IncentiveItems = () => {
   // Get unique values for filter dropdowns
   const uniqueClasses = [...new Set(items.map(item => item.Class).filter(Boolean))].sort();
   const uniqueCategories = [...new Set(items.map(item => item.Category).filter(Boolean))].sort();
-  const uniqueSubCategories = [...new Set(items.map(item => item['Sub category']).filter(Boolean))].sort();
   const uniqueDivisions = [...new Set(items.map(item => item.Division).filter(Boolean))].sort();
+  
+  // Get subcategories filtered by selected category
+  const uniqueSubCategories = getSubCategoriesForCategory(filters.Category);
   
   // Filter sub categories based on search
   const filteredSubCategories = uniqueSubCategories.filter(subCat =>
@@ -370,7 +411,17 @@ const IncentiveItems = () => {
                 <select
                   className="select select-bordered"
                   value={filters.Category}
-                  onChange={(e) => setFilters({ ...filters, Category: e.target.value })}
+                  onChange={(e) => {
+                    const newCategory = e.target.value;
+                    // Reset subcategory when category changes
+                    setFilters({ 
+                      ...filters, 
+                      Category: newCategory,
+                      'Sub category': '' // Reset subcategory when category changes
+                    });
+                    setSubCategorySearch('');
+                    setShowSubCategoryDropdown(false);
+                  }}
                 >
                   <option value="">All Categories</option>
                   {uniqueCategories.map(cat => (

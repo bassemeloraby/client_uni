@@ -2,11 +2,15 @@
 import axios from "axios";
 
 // Use the production URL for the deployed application
-const productionUrl = "https://server-uni.vercel.app/api/";
-// const productionUrl = "http://localhost:5000/api/";
+// const productionUrl = "https://server-uni.vercel.app/api/";
+const productionUrl = "http://localhost:5000/api/";
 
 export const customFetch = axios.create({
   baseURL: productionUrl,
+  timeout: 10000, // 10 seconds timeout
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Add a request interceptor to include the auth token in all requests
