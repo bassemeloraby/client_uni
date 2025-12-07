@@ -43,6 +43,7 @@ export const loader = async ({ request }) => {
     if (params.get('Sub category')) queryParams['Sub category'] = params.get('Sub category');
     if (params.get('Division')) queryParams.Division = params.get('Division');
     if (params.get('search')) queryParams.search = params.get('search');
+    if (params.get('description')) queryParams.description = params.get('description');
     if (params.get('minPrice')) queryParams.minPrice = params.get('minPrice');
     if (params.get('maxPrice')) queryParams.maxPrice = params.get('maxPrice');
     if (params.get('sortByIncentiveValue')) queryParams.sortByIncentiveValue = params.get('sortByIncentiveValue');
@@ -100,6 +101,7 @@ const IncentiveItems = () => {
   
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [descriptionSearch, setDescriptionSearch] = useState(searchParams.get('description') || '');
   const [showFilters, setShowFilters] = useState(false);
   const sortByIncentiveValue = searchParams.get('sortByIncentiveValue') || '';
   const sortByPrice = searchParams.get('sortByPrice') || '';
@@ -136,6 +138,7 @@ const IncentiveItems = () => {
   // Update state when URL params change
   useEffect(() => {
     setSearchTerm(searchParams.get('search') || '');
+    setDescriptionSearch(searchParams.get('description') || '');
     const category = searchParams.get('Category') || '';
     const subCategory = searchParams.get('Sub category') || '';
     
@@ -246,6 +249,7 @@ const IncentiveItems = () => {
     });
     
     if (searchTerm) params.append('search', searchTerm);
+    if (descriptionSearch) params.append('description', descriptionSearch);
     params.append('page', '1'); // Reset to first page when applying filters
     
     setShowSubCategoryDropdown(false);
@@ -271,13 +275,14 @@ const IncentiveItems = () => {
       maxPrice: '',
     });
     setSearchTerm('');
+    setDescriptionSearch('');
     setSubCategorySearch('');
     setShowSubCategoryDropdown(false);
     navigate('/incentive-items');
   };
 
   // Check if any filters are active
-  const hasActiveFilters = Object.values(filters).some(val => val) || searchTerm;
+  const hasActiveFilters = Object.values(filters).some(val => val) || searchTerm || descriptionSearch;
 
   // Get unique values for filter dropdowns
   const uniqueClasses = [...new Set(items.map(item => item.Class).filter(Boolean))].sort();
@@ -349,18 +354,67 @@ const IncentiveItems = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
+      {/* Search Bars */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* General Search Bar */}
         <div className="form-control">
+          <label className="label">
+            <span className="label-text">General Search</span>
+          </label>
           <div className="input-group">
             <input
               type="text"
-              placeholder="Search by description, SAP code, or category..."
+              placeholder="Search by category, SAP code..."
               className="input input-bordered w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
             />
+            {searchTerm && (
+              <button 
+                className="btn btn-square btn-ghost"
+                onClick={() => {
+                  setSearchTerm('');
+                  applyFilters();
+                }}
+              >
+                <FaTimes className="h-5 w-5" />
+              </button>
+            )}
+            <button 
+              className="btn btn-square"
+              onClick={applyFilters}
+            >
+              <FaSearch className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Description Search Bar */}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Description Search</span>
+          </label>
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="Search by description..."
+              className="input input-bordered w-full"
+              value={descriptionSearch}
+              onChange={(e) => setDescriptionSearch(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
+            />
+            {descriptionSearch && (
+              <button 
+                className="btn btn-square btn-ghost"
+                onClick={() => {
+                  setDescriptionSearch('');
+                  applyFilters();
+                }}
+              >
+                <FaTimes className="h-5 w-5" />
+              </button>
+            )}
             <button 
               className="btn btn-square"
               onClick={applyFilters}
