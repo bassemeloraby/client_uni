@@ -287,7 +287,7 @@ const Contests = () => {
           <div className="input-group">
             <input
               type="text"
-              placeholder="Search by company, category, WH description..."
+              placeholder="Search by SAP code, company, category, WH description..."
               className="input input-bordered w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
