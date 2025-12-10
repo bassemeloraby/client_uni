@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLoaderData, Link, useSearchParams } from 'react-router-dom';
 import { 
   FaChartBar, 
@@ -161,6 +161,10 @@ const DetailedSalesStatistics = () => {
   const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
   const { statistics: salesByDayStatistics, summary: salesByDaySummary } = salesByDayStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showPharmaciesByBranch, setShowPharmaciesByBranch] = useState(false);
+  const [showSalesBySalesPerson, setShowSalesBySalesPerson] = useState(false);
+  const [showSalesByInvoiceType, setShowSalesByInvoiceType] = useState(false);
+  const [showSalesByMonth, setShowSalesByMonth] = useState(false);
 
   // Get selected pharmacy name
   const selectedPharmacy = pharmacies.find(p => p.branchCode === parseInt(selectedBranchCode || 0));
@@ -357,12 +361,20 @@ const DetailedSalesStatistics = () => {
       {/* Statistics Table */}
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          <h2 className="card-title mb-4">
-            <FaStore className="text-primary" />
-            Pharmacies by Branch Code
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="card-title">
+              <FaStore className="text-primary" />
+              Pharmacies by Branch Code
+            </h2>
+            <button
+              onClick={() => setShowPharmaciesByBranch(!showPharmaciesByBranch)}
+              className="btn btn-sm btn-primary"
+            >
+              Pharmacies by Branch Code
+            </button>
+          </div>
           
-          {statistics && statistics.length > 0 ? (
+          {showPharmaciesByBranch && statistics && statistics.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-zebra w-full">
                 <thead>
@@ -440,7 +452,7 @@ const DetailedSalesStatistics = () => {
                 </tfoot>
               </table>
             </div>
-          ) : (
+          ) : showPharmaciesByBranch ? (
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No statistics available
@@ -449,7 +461,7 @@ const DetailedSalesStatistics = () => {
                 No branch codes found in detailed sales records
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -466,7 +478,15 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
-            <div className="flex flex-col md:flex-row gap-4">
+            <button
+              onClick={() => setShowSalesBySalesPerson(!showSalesBySalesPerson)}
+              className="btn btn-sm btn-primary"
+            >
+              Sales by Sales Person
+            </button>
+          </div>
+          {showSalesBySalesPerson && (
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
               <div className="form-control w-full md:w-auto">
                 <label className="label">
                   <span className="label-text font-semibold flex items-center gap-2">
@@ -508,9 +528,9 @@ const DetailedSalesStatistics = () => {
                 </select>
               </div>
             </div>
-          </div>
+          )}
           
-          {salesByNameStatistics && salesByNameStatistics.length > 0 ? (
+          {showSalesBySalesPerson && salesByNameStatistics && salesByNameStatistics.length > 0 ? (
             <>
               {/* Sales Name Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -543,7 +563,7 @@ const DetailedSalesStatistics = () => {
                       <th>Total Sales</th>
                       <th>% of Total</th>
                       <th>Transactions</th>
-                      <th>Actions</th>
+                      <th>APT</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -577,13 +597,12 @@ const DetailedSalesStatistics = () => {
                           </div>
                         </td>
                         <td>
-                          <Link
-                            to={`/detailed-sales?salesName=${encodeURIComponent(stat.salesName)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
-                            className="btn btn-sm btn-primary gap-2"
-                          >
-                            <FaChartBar />
-                            View
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <FaDollarSign className="text-primary" />
+                            <span className="text-lg font-semibold text-primary">
+                              {formatCurrency(stat.totalTransactions > 0 ? stat.totalSales / stat.totalTransactions : 0)}
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -604,7 +623,15 @@ const DetailedSalesStatistics = () => {
                           {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
                         </span>
                       </th>
-                      <th></th>
+                      <th>
+                        <span className="text-lg font-semibold text-primary">
+                          {(() => {
+                            const totalSales = salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0);
+                            const totalTransactions = salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0);
+                            return formatCurrency(totalTransactions > 0 ? totalSales / totalTransactions : 0);
+                          })()}
+                        </span>
+                      </th>
                     </tr>
                   </tfoot>
                 </table>
@@ -659,7 +686,7 @@ const DetailedSalesStatistics = () => {
                 </div>
               </div>
             </>
-          ) : (
+          ) : showSalesBySalesPerson ? (
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No sales person statistics available
@@ -668,7 +695,7 @@ const DetailedSalesStatistics = () => {
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -685,7 +712,15 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
-            <div className="form-control w-full md:w-auto">
+            <button
+              onClick={() => setShowSalesByInvoiceType(!showSalesByInvoiceType)}
+              className="btn btn-sm btn-primary"
+            >
+              Sales by Invoice Type
+            </button>
+          </div>
+          {showSalesByInvoiceType && (
+            <div className="form-control w-full md:w-auto mb-4">
               <label className="label">
                 <span className="label-text font-semibold flex items-center gap-2">
                   <FaCalendarAlt className="text-primary" />
@@ -705,9 +740,9 @@ const DetailedSalesStatistics = () => {
                 ))}
               </select>
             </div>
-          </div>
+          )}
           
-          {salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
+          {showSalesByInvoiceType && salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
             <>
               {/* Invoice Type Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -866,7 +901,7 @@ const DetailedSalesStatistics = () => {
                 </div>
               </div>
             </>
-          ) : (
+          ) : showSalesByInvoiceType ? (
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No invoice type statistics available
@@ -875,7 +910,7 @@ const DetailedSalesStatistics = () => {
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -892,7 +927,15 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
-            <div className="flex flex-col md:flex-row gap-4">
+            <button
+              onClick={() => setShowSalesByMonth(!showSalesByMonth)}
+              className="btn btn-sm btn-primary"
+            >
+              Sales by Month
+            </button>
+          </div>
+          {showSalesByMonth && (
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
               <div className="form-control w-full md:w-auto">
                 <label className="label">
                   <span className="label-text font-semibold flex items-center gap-2">
@@ -934,9 +977,9 @@ const DetailedSalesStatistics = () => {
                 </select>
               </div>
             </div>
-          </div>
+          )}
           
-          {filteredSalesByMonthStatistics && filteredSalesByMonthStatistics.length > 0 ? (
+          {showSalesByMonth && filteredSalesByMonthStatistics && filteredSalesByMonthStatistics.length > 0 ? (
             <>
               {/* Sales by Month Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -1297,7 +1340,7 @@ const DetailedSalesStatistics = () => {
                 </>
               )}
             </>
-          ) : (
+          ) : showSalesByMonth ? (
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No monthly sales statistics available
@@ -1306,7 +1349,7 @@ const DetailedSalesStatistics = () => {
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
