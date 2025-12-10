@@ -44,13 +44,36 @@ export const loader = async ({ request }) => {
     const pharmaciesResponse = await customFetch.get('pharmacies');
     const pharmacies = pharmaciesResponse.data.success ? pharmaciesResponse.data.data : [];
 
-    // Build sales by name URL with branchCode if provided
+    // Get salesPersonMonth and invoiceTypeMonth from URL params
+    const salesPersonMonth = params.get('salesPersonMonth'); // Format: "YYYY-MM"
+    const invoiceTypeMonth = params.get('invoiceTypeMonth'); // Format: "YYYY-MM"
+
+    // Build sales by name URL with branchCode and month if provided
     let salesByNameUrlWithFilter = salesByNameUrl;
     let salesByInvoiceTypeUrlWithFilter = salesByInvoiceTypeUrl;
     let salesByMonthUrlWithFilter = salesByMonthUrl;
+    
+    const salesByNameParams = [];
+    if (branchCode) salesByNameParams.push(`branchCode=${branchCode}`);
+    if (salesPersonMonth) {
+      const [year, monthNum] = salesPersonMonth.split('-');
+      salesByNameParams.push(`year=${year}&month=${monthNum}`);
+    }
+    if (salesByNameParams.length > 0) {
+      salesByNameUrlWithFilter += `?${salesByNameParams.join('&')}`;
+    }
+    
+    const salesByInvoiceTypeParams = [];
+    if (branchCode) salesByInvoiceTypeParams.push(`branchCode=${branchCode}`);
+    if (invoiceTypeMonth) {
+      const [year, monthNum] = invoiceTypeMonth.split('-');
+      salesByInvoiceTypeParams.push(`year=${year}&month=${monthNum}`);
+    }
+    if (salesByInvoiceTypeParams.length > 0) {
+      salesByInvoiceTypeUrlWithFilter += `?${salesByInvoiceTypeParams.join('&')}`;
+    }
+    
     if (branchCode) {
-      salesByNameUrlWithFilter += `?branchCode=${branchCode}`;
-      salesByInvoiceTypeUrlWithFilter += `?branchCode=${branchCode}`;
       salesByMonthUrlWithFilter += `?branchCode=${branchCode}`;
     }
 
@@ -104,6 +127,8 @@ export const loader = async ({ request }) => {
         pharmacies,
         selectedBranchCode: branchCode || null,
         selectedMonth: month || null,
+        selectedSalesPersonMonth: salesPersonMonth || null,
+        selectedInvoiceTypeMonth: invoiceTypeMonth || null,
       };
     }
     throw new Error("Failed to fetch statistics");
@@ -129,7 +154,7 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
   const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
@@ -142,6 +167,8 @@ const DetailedSalesStatistics = () => {
   
   // Get selected month from URL params (use from loader or searchParams)
   const currentSelectedMonth = selectedMonth || searchParams.get('month') || '';
+  const currentSalesPersonMonth = selectedSalesPersonMonth || searchParams.get('salesPersonMonth') || '';
+  const currentInvoiceTypeMonth = selectedInvoiceTypeMonth || searchParams.get('invoiceTypeMonth') || '';
   
   // Determine if we should show daily data (when a month is selected)
   const showDailyData = currentSelectedMonth !== '';
@@ -166,22 +193,56 @@ const DetailedSalesStatistics = () => {
   const handlePharmacyChange = (e) => {
     const branchCode = e.target.value;
     const month = searchParams.get('month') || '';
-    if (branchCode) {
-      setSearchParams({ branchCode, ...(month && { month }) });
-    } else {
-      setSearchParams(month ? { month } : {});
-    }
+    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
+    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
+    const params = {};
+    if (branchCode) params.branchCode = branchCode;
+    if (month) params.month = month;
+    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
+    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
+    setSearchParams(params);
   };
 
   // Handle month filter change for Sales by Month section
   const handleMonthChange = (e) => {
     const month = e.target.value;
     const branchCode = searchParams.get('branchCode') || '';
-    if (month) {
-      setSearchParams({ ...(branchCode && { branchCode }), month });
-    } else {
-      setSearchParams(branchCode ? { branchCode } : {});
-    }
+    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
+    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
+    const params = {};
+    if (branchCode) params.branchCode = branchCode;
+    if (month) params.month = month;
+    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
+    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
+    setSearchParams(params);
+  };
+
+  // Handle month filter change for Sales by Sales Person section
+  const handleSalesPersonMonthChange = (e) => {
+    const salesPersonMonth = e.target.value;
+    const branchCode = searchParams.get('branchCode') || '';
+    const month = searchParams.get('month') || '';
+    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
+    const params = {};
+    if (branchCode) params.branchCode = branchCode;
+    if (month) params.month = month;
+    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
+    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
+    setSearchParams(params);
+  };
+
+  // Handle month filter change for Sales by Invoice Type section
+  const handleInvoiceTypeMonthChange = (e) => {
+    const invoiceTypeMonth = e.target.value;
+    const branchCode = searchParams.get('branchCode') || '';
+    const month = searchParams.get('month') || '';
+    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
+    const params = {};
+    if (branchCode) params.branchCode = branchCode;
+    if (month) params.month = month;
+    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
+    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
+    setSearchParams(params);
   };
 
   // Filter sales by month statistics based on selected month
@@ -405,25 +466,47 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
-            <div className="form-control w-full md:w-auto">
-              <label className="label">
-                <span className="label-text font-semibold flex items-center gap-2">
-                  <FaFilter className="text-primary" />
-                  Filter by Pharmacy
-                </span>
-              </label>
-              <select
-                className="select select-bordered w-full md:w-64"
-                value={selectedBranchCode || ''}
-                onChange={handlePharmacyChange}
-              >
-                <option value="">All Pharmacies</option>
-                {pharmacies.map((pharmacy) => (
-                  <option key={pharmacy._id} value={pharmacy.branchCode}>
-                    {pharmacy.name} (Branch: {pharmacy.branchCode})
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="form-control w-full md:w-auto">
+                <label className="label">
+                  <span className="label-text font-semibold flex items-center gap-2">
+                    <FaFilter className="text-primary" />
+                    Filter by Pharmacy
+                  </span>
+                </label>
+                <select
+                  className="select select-bordered w-full md:w-64"
+                  value={selectedBranchCode || ''}
+                  onChange={handlePharmacyChange}
+                >
+                  <option value="">All Pharmacies</option>
+                  {pharmacies.map((pharmacy) => (
+                    <option key={pharmacy._id} value={pharmacy.branchCode}>
+                      {pharmacy.name} (Branch: {pharmacy.branchCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-control w-full md:w-auto">
+                <label className="label">
+                  <span className="label-text font-semibold flex items-center gap-2">
+                    <FaCalendarAlt className="text-primary" />
+                    Filter by Month
+                  </span>
+                </label>
+                <select
+                  className="select select-bordered w-full md:w-64"
+                  value={currentSalesPersonMonth || ''}
+                  onChange={handleSalesPersonMonthChange}
+                >
+                  <option value="">All Months</option>
+                  {salesByMonthStatistics?.map((stat) => (
+                    <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
+                      {stat.monthYear}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
           
@@ -602,6 +685,26 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
+            <div className="form-control w-full md:w-auto">
+              <label className="label">
+                <span className="label-text font-semibold flex items-center gap-2">
+                  <FaCalendarAlt className="text-primary" />
+                  Filter by Month
+                </span>
+              </label>
+              <select
+                className="select select-bordered w-full md:w-64"
+                value={currentInvoiceTypeMonth || ''}
+                onChange={handleInvoiceTypeMonthChange}
+              >
+                <option value="">All Months</option>
+                {salesByMonthStatistics?.map((stat) => (
+                  <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
+                    {stat.monthYear}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           
           {salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
