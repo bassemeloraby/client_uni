@@ -763,6 +763,7 @@ const DetailedSalesStatistics = () => {
                     <tr>
                       <th>Month</th>
                       <th>Total Sales</th>
+                      <th>Average Sales per Day</th>
                       <th>% of Total</th>
                       <th>Transactions</th>
                       <th>Quantity</th>
@@ -782,6 +783,14 @@ const DetailedSalesStatistics = () => {
                             <FaDollarSign className="text-warning" />
                             <span className="text-lg font-semibold text-success">
                               {formatCurrency(stat.totalSales)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaDollarSign className="text-info" />
+                            <span className="text-lg font-semibold text-primary">
+                              {formatCurrency(stat.averageSalesPerDay || 0)}
                             </span>
                           </div>
                         </td>
@@ -814,6 +823,16 @@ const DetailedSalesStatistics = () => {
                         <span className="text-lg font-semibold text-success">
                           {formatCurrency(salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
                         </span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold text-primary">
+                          {formatCurrency(
+                            salesByMonthStatistics.length > 0
+                              ? salesByMonthStatistics.reduce((sum, stat) => sum + (stat.averageSalesPerDay || 0), 0) / salesByMonthStatistics.length
+                              : 0
+                          )}
+                        </span>
+                        <span className="text-xs text-base-content/70 ml-2">(Overall Avg)</span>
                       </th>
                       <th>
                         <span className="badge badge-primary badge-lg">100.00%</span>
