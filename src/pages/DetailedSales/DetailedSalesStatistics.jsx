@@ -21,6 +21,7 @@ const url = "detailed-sales/stats/pharmacies-by-branch";
 const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
 const salesByMonthUrl = "detailed-sales/stats/sales-by-month";
+const salesByDayUrl = "detailed-sales/stats/sales-by-day";
 
 export const loader = async ({ request }) => {
   try {
@@ -34,9 +35,10 @@ export const loader = async ({ request }) => {
       });
     }
 
-    // Get branchCode from URL params
+    // Get branchCode and month from URL params
     const params = new URL(request.url).searchParams;
     const branchCode = params.get('branchCode');
+    const month = params.get('month'); // Format: "YYYY-MM"
 
     // Fetch pharmacies for dropdown
     const pharmaciesResponse = await customFetch.get('pharmacies');
@@ -52,12 +54,29 @@ export const loader = async ({ request }) => {
       salesByMonthUrlWithFilter += `?branchCode=${branchCode}`;
     }
 
-    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse] = await Promise.allSettled([
+    // Build sales by day URL if month is selected
+    let salesByDayUrlWithFilter = null;
+    if (month) {
+      const [year, monthNum] = month.split('-');
+      salesByDayUrlWithFilter = salesByDayUrl;
+      salesByDayUrlWithFilter += `?year=${year}&month=${monthNum}`;
+      if (branchCode) {
+        salesByDayUrlWithFilter += `&branchCode=${branchCode}`;
+      }
+    }
+
+    const promises = [
       customFetch.get(url),
       customFetch.get(salesByNameUrlWithFilter),
       customFetch.get(salesByInvoiceTypeUrlWithFilter),
       customFetch.get(salesByMonthUrlWithFilter),
-    ]);
+    ];
+
+    if (salesByDayUrlWithFilter) {
+      promises.push(customFetch.get(salesByDayUrlWithFilter));
+    }
+
+    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByDayResponse] = await Promise.allSettled(promises);
     
     const pharmacyStats = pharmacyStatsResponse.status === 'fulfilled' && pharmacyStatsResponse.value.data.success 
       ? pharmacyStatsResponse.value.data.data 
@@ -71,6 +90,9 @@ export const loader = async ({ request }) => {
     const salesByMonthStats = salesByMonthResponse.status === 'fulfilled' && salesByMonthResponse.value.data.success 
       ? salesByMonthResponse.value.data.data 
       : null;
+    const salesByDayStats = salesByDayResponse && salesByDayResponse.status === 'fulfilled' && salesByDayResponse.value.data.success 
+      ? salesByDayResponse.value.data.data 
+      : null;
     
     if (pharmacyStats && salesByNameStats) {
       return {
@@ -78,8 +100,10 @@ export const loader = async ({ request }) => {
         salesByNameStats,
         salesByInvoiceTypeStats,
         salesByMonthStats,
+        salesByDayStats,
         pharmacies,
         selectedBranchCode: branchCode || null,
+        selectedMonth: month || null,
       };
     }
     throw new Error("Failed to fetch statistics");
@@ -105,18 +129,22 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, pharmacies, selectedBranchCode } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
   const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
   const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
+  const { statistics: salesByDayStatistics, summary: salesByDaySummary } = salesByDayStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get selected pharmacy name
   const selectedPharmacy = pharmacies.find(p => p.branchCode === parseInt(selectedBranchCode || 0));
   
-  // Get selected month from URL params
-  const selectedMonth = searchParams.get('month') || '';
+  // Get selected month from URL params (use from loader or searchParams)
+  const currentSelectedMonth = selectedMonth || searchParams.get('month') || '';
+  
+  // Determine if we should show daily data (when a month is selected)
+  const showDailyData = currentSelectedMonth !== '';
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -937,126 +965,234 @@ const DetailedSalesStatistics = () => {
                 </table>
               </div>
 
-              {/* Column Chart */}
-              <div className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h3 className="card-title text-lg mb-4">
-                    <FaChartBar className="text-primary" />
-                    Monthly Sales Distribution
-                  </h3>
-                  {filteredSalesByMonthStatistics.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={450}>
-                      <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="monthYear" 
-                          angle={-45}
-                          textAnchor="end"
-                          height={120}
-                          interval={0}
-                          tick={{ fontSize: 12, fill: '#666' }}
-                          tickFormatter={(value) => {
-                            // Shorten month names for better display
-                            const parts = value.split(' ');
-                            if (parts.length === 2) {
-                              const month = parts[0].substring(0, 3); // First 3 letters
-                              const year = parts[1];
-                              return `${month} ${year}`;
-                            }
-                            return value;
-                          }}
-                        />
-                        <YAxis 
-                          tickFormatter={(value) => formatCurrency(value)}
-                          tick={{ fontSize: 12, fill: '#666' }}
-                        />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            const totalSales = salesByMonthStatistics?.reduce((sum, stat) => sum + stat.totalSales, 0) || 0;
-                            const percentage = totalSales > 0 ? (value / totalSales) * 100 : 0;
-                            return [
-                              `${formatCurrency(value)} (${formatPercentage(percentage)}%)`,
-                              'Sales'
-                            ];
-                          }}
-                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
-                        />
-                        <Bar 
-                          dataKey="totalSales" 
-                          fill="#3b82f6"
-                          radius={[8, 8, 0, 0]}
-                        >
-                          {filteredSalesByMonthStatistics.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96">
-                      <p className="text-base-content/70">No data available for chart</p>
+              {/* Column Chart - Show daily or monthly based on selection */}
+              {showDailyData && salesByDayStatistics ? (
+                <>
+                  {/* Daily Sales Distribution */}
+                  <div className="card bg-base-200 shadow-md">
+                    <div className="card-body">
+                      <h3 className="card-title text-lg mb-4">
+                        <FaChartBar className="text-primary" />
+                        Daily Sales Distribution
+                      </h3>
+                      {salesByDayStatistics.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={450}>
+                          <BarChart data={salesByDayStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="dayLabel" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={120}
+                              interval={0}
+                              tick={{ fontSize: 11, fill: '#666' }}
+                            />
+                            <YAxis 
+                              tickFormatter={(value) => formatCurrency(value)}
+                              tick={{ fontSize: 12, fill: '#666' }}
+                            />
+                            <Tooltip 
+                              formatter={(value, name, props) => {
+                                const totalSales = salesByDayStatistics?.reduce((sum, stat) => sum + stat.totalSales, 0) || 0;
+                                const percentage = totalSales > 0 ? (value / totalSales) * 100 : 0;
+                                return [
+                                  `${formatCurrency(value)} (${formatPercentage(percentage)}%)`,
+                                  'Sales'
+                                ];
+                              }}
+                              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                            />
+                            <Bar 
+                              dataKey="totalSales" 
+                              fill="#3b82f6"
+                              radius={[8, 8, 0, 0]}
+                            >
+                              {salesByDayStatistics.map((entry, index) => (
+                                <Cell key={`cell-day-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-96">
+                          <p className="text-base-content/70">No data available for chart</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Transactions Column Chart */}
-              <div className="card bg-base-200 shadow-md mt-6">
-                <div className="card-body">
-                  <h3 className="card-title text-lg mb-4">
-                    <FaChartBar className="text-primary" />
-                    Monthly Transactions Distribution
-                  </h3>
-                  {filteredSalesByMonthStatistics.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={450}>
-                      <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="monthYear" 
-                          angle={-45}
-                          textAnchor="end"
-                          height={120}
-                          interval={0}
-                          tick={{ fontSize: 12, fill: '#666' }}
-                          tickFormatter={(value) => {
-                            // Shorten month names for better display
-                            const parts = value.split(' ');
-                            if (parts.length === 2) {
-                              const month = parts[0].substring(0, 3); // First 3 letters
-                              const year = parts[1];
-                              return `${month} ${year}`;
-                            }
-                            return value;
-                          }}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: 12, fill: '#666' }}
-                        />
-                        <Tooltip 
-                          formatter={(value, name, props) => [
-                            `${value} transactions`,
-                            'Transactions'
-                          ]}
-                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
-                        />
-                        <Bar 
-                          dataKey="totalTransactions" 
-                          fill="#10b981"
-                          radius={[8, 8, 0, 0]}
-                        >
-                          {filteredSalesByMonthStatistics.map((entry, index) => (
-                            <Cell key={`cell-trans-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96">
-                      <p className="text-base-content/70">No data available for chart</p>
+                  {/* Daily Transactions Distribution */}
+                  <div className="card bg-base-200 shadow-md mt-6">
+                    <div className="card-body">
+                      <h3 className="card-title text-lg mb-4">
+                        <FaChartBar className="text-primary" />
+                        Daily Transactions Distribution
+                      </h3>
+                      {salesByDayStatistics.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={450}>
+                          <BarChart data={salesByDayStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="dayLabel" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={120}
+                              interval={0}
+                              tick={{ fontSize: 11, fill: '#666' }}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12, fill: '#666' }}
+                            />
+                            <Tooltip 
+                              formatter={(value, name, props) => [
+                                `${value} transactions`,
+                                'Transactions'
+                              ]}
+                              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                            />
+                            <Bar 
+                              dataKey="totalTransactions" 
+                              fill="#10b981"
+                              radius={[8, 8, 0, 0]}
+                            >
+                              {salesByDayStatistics.map((entry, index) => (
+                                <Cell key={`cell-day-trans-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-96">
+                          <p className="text-base-content/70">No data available for chart</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Monthly Sales Distribution */}
+                  <div className="card bg-base-200 shadow-md">
+                    <div className="card-body">
+                      <h3 className="card-title text-lg mb-4">
+                        <FaChartBar className="text-primary" />
+                        Monthly Sales Distribution
+                      </h3>
+                      {filteredSalesByMonthStatistics.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={450}>
+                          <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="monthYear" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={120}
+                              interval={0}
+                              tick={{ fontSize: 12, fill: '#666' }}
+                              tickFormatter={(value) => {
+                                // Shorten month names for better display
+                                const parts = value.split(' ');
+                                if (parts.length === 2) {
+                                  const month = parts[0].substring(0, 3); // First 3 letters
+                                  const year = parts[1];
+                                  return `${month} ${year}`;
+                                }
+                                return value;
+                              }}
+                            />
+                            <YAxis 
+                              tickFormatter={(value) => formatCurrency(value)}
+                              tick={{ fontSize: 12, fill: '#666' }}
+                            />
+                            <Tooltip 
+                              formatter={(value, name, props) => {
+                                const totalSales = salesByMonthStatistics?.reduce((sum, stat) => sum + stat.totalSales, 0) || 0;
+                                const percentage = totalSales > 0 ? (value / totalSales) * 100 : 0;
+                                return [
+                                  `${formatCurrency(value)} (${formatPercentage(percentage)}%)`,
+                                  'Sales'
+                                ];
+                              }}
+                              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                            />
+                            <Bar 
+                              dataKey="totalSales" 
+                              fill="#3b82f6"
+                              radius={[8, 8, 0, 0]}
+                            >
+                              {filteredSalesByMonthStatistics.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-96">
+                          <p className="text-base-content/70">No data available for chart</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Monthly Transactions Distribution */}
+                  <div className="card bg-base-200 shadow-md mt-6">
+                    <div className="card-body">
+                      <h3 className="card-title text-lg mb-4">
+                        <FaChartBar className="text-primary" />
+                        Monthly Transactions Distribution
+                      </h3>
+                      {filteredSalesByMonthStatistics.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={450}>
+                          <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="monthYear" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={120}
+                              interval={0}
+                              tick={{ fontSize: 12, fill: '#666' }}
+                              tickFormatter={(value) => {
+                                // Shorten month names for better display
+                                const parts = value.split(' ');
+                                if (parts.length === 2) {
+                                  const month = parts[0].substring(0, 3); // First 3 letters
+                                  const year = parts[1];
+                                  return `${month} ${year}`;
+                                }
+                                return value;
+                              }}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12, fill: '#666' }}
+                            />
+                            <Tooltip 
+                              formatter={(value, name, props) => [
+                                `${value} transactions`,
+                                'Transactions'
+                              ]}
+                              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                            />
+                            <Bar 
+                              dataKey="totalTransactions" 
+                              fill="#10b981"
+                              radius={[8, 8, 0, 0]}
+                            >
+                              {filteredSalesByMonthStatistics.map((entry, index) => (
+                                <Cell key={`cell-trans-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-96">
+                          <p className="text-base-content/70">No data available for chart</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <div className="text-center py-12">
