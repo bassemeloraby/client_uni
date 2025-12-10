@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { useLoaderData, Link } from 'react-router-dom';
+import { useLoaderData, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList, FaSearch, FaTable } from 'react-icons/fa';
+import { FaPlus, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaCheckCircle, FaTimesCircle, FaTh, FaList, FaSearch, FaTable, FaTrash } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import { customFetch } from "../../utils";
 const url = "pharmacies";
 
@@ -46,15 +47,50 @@ export const loader = async ({ request }) => {
 
 const Pharmacies = () => {
   const pharmacies = useLoaderData();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.userRole?.toLowerCase() === 'admin';
   const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list'
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pharmacyToDelete, setPharmacyToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Filter pharmacies by name
   const filteredPharmacies = pharmacies.filter((pharmacy) =>
     pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteClick = (e, pharmacy) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPharmacyToDelete(pharmacy);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pharmacyToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await customFetch.delete(`pharmacies/${pharmacyToDelete._id}`);
+      
+      if (response.data.success) {
+        toast.success(`Pharmacy "${pharmacyToDelete.name}" deleted successfully!`);
+        setShowDeleteModal(false);
+        setPharmacyToDelete(null);
+        // Reload the page to show updated data
+        navigate(0);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        'Failed to delete pharmacy. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -132,12 +168,23 @@ const Pharmacies = () => {
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPharmacies.map((pharmacy) => (
-              <Link
+              <div
                 key={pharmacy._id}
-                to={`/pharmacies/${pharmacy._id}`}
-                className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+                className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow relative"
               >
-                <div className="card-body">
+                {isAdmin && (
+                  <button
+                    onClick={(e) => handleDeleteClick(e, pharmacy)}
+                    className="absolute top-4 right-4 btn btn-sm btn-circle btn-error z-10"
+                    title="Delete pharmacy"
+                  >
+                    <FaTrash className="h-4 w-4" />
+                  </button>
+                )}
+                <Link
+                  to={`/pharmacies/${pharmacy._id}`}
+                  className="card-body cursor-pointer"
+                >
                   <div className="flex items-start justify-between mb-2">
                     <h2 className="card-title text-2xl">{pharmacy.name}</h2>
                     {pharmacy.isActive ? (
@@ -210,19 +257,30 @@ const Pharmacies = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
           ) : (
             <div className="space-y-4">
               {filteredPharmacies.map((pharmacy) => (
-              <Link
+              <div
                 key={pharmacy._id}
-                to={`/pharmacies/${pharmacy._id}`}
-                className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow relative"
               >
-                <div className="card-body">
+                {isAdmin && (
+                  <button
+                    onClick={(e) => handleDeleteClick(e, pharmacy)}
+                    className="absolute top-4 right-4 btn btn-sm btn-circle btn-error z-10"
+                    title="Delete pharmacy"
+                  >
+                    <FaTrash className="h-4 w-4" />
+                  </button>
+                )}
+                <Link
+                  to={`/pharmacies/${pharmacy._id}`}
+                  className="card-body cursor-pointer"
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -303,8 +361,8 @@ const Pharmacies = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
               ))}
             </div>
           )
@@ -338,6 +396,53 @@ const Pharmacies = () => {
               Create Your First Pharmacy
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && pharmacyToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-base-100 rounded-lg shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Delete Pharmacy</h2>
+              <p className="text-base-content/70 mb-6">
+                Are you sure you want to delete{' '}
+                <span className="font-semibold text-error">
+                  {pharmacyToDelete.name}
+                </span>
+                ? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setPharmacyToDelete(null);
+                  }}
+                  className="btn btn-outline"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="btn btn-error gap-2"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <FaTrash />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
