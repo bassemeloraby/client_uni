@@ -114,6 +114,9 @@ const DetailedSalesStatistics = () => {
 
   // Get selected pharmacy name
   const selectedPharmacy = pharmacies.find(p => p.branchCode === parseInt(selectedBranchCode || 0));
+  
+  // Get selected month from URL params
+  const selectedMonth = searchParams.get('month') || '';
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -134,12 +137,38 @@ const DetailedSalesStatistics = () => {
   // Handle pharmacy filter change
   const handlePharmacyChange = (e) => {
     const branchCode = e.target.value;
+    const month = searchParams.get('month') || '';
     if (branchCode) {
-      setSearchParams({ branchCode });
+      setSearchParams({ branchCode, ...(month && { month }) });
     } else {
-      setSearchParams({});
+      setSearchParams(month ? { month } : {});
     }
   };
+
+  // Handle month filter change for Sales by Month section
+  const handleMonthChange = (e) => {
+    const month = e.target.value;
+    const branchCode = searchParams.get('branchCode') || '';
+    if (month) {
+      setSearchParams({ ...(branchCode && { branchCode }), month });
+    } else {
+      setSearchParams(branchCode ? { branchCode } : {});
+    }
+  };
+
+  // Filter sales by month statistics based on selected month
+  const filteredSalesByMonthStatistics = selectedMonth
+    ? salesByMonthStatistics?.filter(stat => {
+        const [monthName, year] = stat.monthYear.split(' ');
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthIndex = monthNames.indexOf(monthName);
+        const monthValue = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+        return monthValue === selectedMonth;
+      }) || []
+    : salesByMonthStatistics || [];
 
   // Prepare data for pie chart
   const pieChartData = salesByNameStatistics?.map((stat, index) => ({
@@ -478,18 +507,20 @@ const DetailedSalesStatistics = () => {
                     Sales Distribution
                   </h3>
                   {pieChartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={400}>
-                        <BarChart data={pieChartData}>
+                      <ResponsiveContainer width="100%" height={450}>
+                        <BarChart data={pieChartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="name" 
                             angle={-45}
                             textAnchor="end"
-                            height={100}
+                            height={120}
                             interval={0}
+                            tick={{ fontSize: 12, fill: '#666' }}
                           />
                           <YAxis 
                             tickFormatter={(value) => formatCurrency(value)}
+                            tick={{ fontSize: 12, fill: '#666' }}
                           />
                           <Tooltip 
                             formatter={(value, name, props) => [
@@ -730,29 +761,75 @@ const DetailedSalesStatistics = () => {
                 </span>
               )}
             </h2>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="form-control w-full md:w-auto">
+                <label className="label">
+                  <span className="label-text font-semibold flex items-center gap-2">
+                    <FaFilter className="text-primary" />
+                    Filter by Pharmacy
+                  </span>
+                </label>
+                <select
+                  className="select select-bordered w-full md:w-64"
+                  value={selectedBranchCode || ''}
+                  onChange={handlePharmacyChange}
+                >
+                  <option value="">All Pharmacies</option>
+                  {pharmacies.map((pharmacy) => (
+                    <option key={pharmacy._id} value={pharmacy.branchCode}>
+                      {pharmacy.name} (Branch: {pharmacy.branchCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-control w-full md:w-auto">
+                <label className="label">
+                  <span className="label-text font-semibold flex items-center gap-2">
+                    <FaCalendarAlt className="text-primary" />
+                    Filter by Month
+                  </span>
+                </label>
+                <select
+                  className="select select-bordered w-full md:w-64"
+                  value={selectedMonth || ''}
+                  onChange={handleMonthChange}
+                >
+                  <option value="">All Months</option>
+                  {salesByMonthStatistics?.map((stat) => (
+                    <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
+                      {stat.monthYear}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
           
-          {salesByMonthStatistics && salesByMonthStatistics.length > 0 ? (
+          {filteredSalesByMonthStatistics && filteredSalesByMonthStatistics.length > 0 ? (
             <>
               {/* Sales by Month Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Months</div>
-                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalMonths || 0}</div>
+                  <div className="stat-value text-2xl">{filteredSalesByMonthStatistics.length || 0}</div>
                 </div>
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Sales</div>
                   <div className="stat-value text-2xl">
-                    {formatCurrency(salesByMonthSummary?.totalSales || 0)}
+                    {formatCurrency(filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
                   </div>
                 </div>
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Transactions</div>
-                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalTransactions || 0}</div>
+                  <div className="stat-value text-2xl">
+                    {filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                  </div>
                 </div>
                 <div className="stat bg-base-200 rounded-lg p-4">
                   <div className="stat-title text-xs">Total Units Quantity</div>
-                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalQuantity || 0}</div>
+                  <div className="stat-value text-2xl">
+                    {filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalQuantity, 0)}
+                  </div>
                 </div>
               </div>
 
@@ -770,7 +847,7 @@ const DetailedSalesStatistics = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {salesByMonthStatistics.map((stat) => (
+                    {filteredSalesByMonthStatistics.map((stat) => (
                       <tr key={`${stat.year}-${stat.month}`} className="hover">
                         <td>
                           <div className="flex items-center gap-2">
@@ -821,30 +898,38 @@ const DetailedSalesStatistics = () => {
                       <th>Total</th>
                       <th>
                         <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                          {formatCurrency(filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
                         </span>
                       </th>
                       <th>
                         <span className="text-lg font-semibold text-primary">
                           {formatCurrency(
-                            salesByMonthStatistics.length > 0
-                              ? salesByMonthStatistics.reduce((sum, stat) => sum + (stat.averageSalesPerDay || 0), 0) / salesByMonthStatistics.length
+                            filteredSalesByMonthStatistics.length > 0
+                              ? filteredSalesByMonthStatistics.reduce((sum, stat) => sum + (stat.averageSalesPerDay || 0), 0) / filteredSalesByMonthStatistics.length
                               : 0
                           )}
                         </span>
                         <span className="text-xs text-base-content/70 ml-2">(Overall Avg)</span>
                       </th>
                       <th>
-                        <span className="badge badge-primary badge-lg">100.00%</span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                        <span className="badge badge-primary badge-lg">
+                          {filteredSalesByMonthStatistics.length > 0 && salesByMonthStatistics.length > 0
+                            ? formatPercentage(
+                                (filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0) /
+                                  salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0)) *
+                                  100
+                              )
+                            : '0.00'}%
                         </span>
                       </th>
                       <th>
                         <span className="text-lg font-semibold">
-                          {salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalQuantity, 0)}
+                          {filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                        </span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold">
+                          {filteredSalesByMonthStatistics.reduce((sum, stat) => sum + stat.totalQuantity, 0)}
                         </span>
                       </th>
                     </tr>
@@ -859,9 +944,9 @@ const DetailedSalesStatistics = () => {
                     <FaChartBar className="text-primary" />
                     Monthly Sales Distribution
                   </h3>
-                  {salesByMonthStatistics.length > 0 ? (
+                  {filteredSalesByMonthStatistics.length > 0 ? (
                     <ResponsiveContainer width="100%" height={450}>
-                      <BarChart data={salesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                      <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="monthYear" 
@@ -886,10 +971,14 @@ const DetailedSalesStatistics = () => {
                           tick={{ fontSize: 12, fill: '#666' }}
                         />
                         <Tooltip 
-                          formatter={(value, name, props) => [
-                            `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
-                            'Sales'
-                          ]}
+                          formatter={(value, name, props) => {
+                            const totalSales = salesByMonthStatistics?.reduce((sum, stat) => sum + stat.totalSales, 0) || 0;
+                            const percentage = totalSales > 0 ? (value / totalSales) * 100 : 0;
+                            return [
+                              `${formatCurrency(value)} (${formatPercentage(percentage)}%)`,
+                              'Sales'
+                            ];
+                          }}
                           contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
                         />
                         <Bar 
@@ -897,7 +986,7 @@ const DetailedSalesStatistics = () => {
                           fill="#3b82f6"
                           radius={[8, 8, 0, 0]}
                         >
-                          {salesByMonthStatistics.map((entry, index) => (
+                          {filteredSalesByMonthStatistics.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Bar>
@@ -918,9 +1007,9 @@ const DetailedSalesStatistics = () => {
                     <FaChartBar className="text-primary" />
                     Monthly Transactions Distribution
                   </h3>
-                  {salesByMonthStatistics.length > 0 ? (
+                  {filteredSalesByMonthStatistics.length > 0 ? (
                     <ResponsiveContainer width="100%" height={450}>
-                      <BarChart data={salesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                      <BarChart data={filteredSalesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="monthYear" 
@@ -955,7 +1044,7 @@ const DetailedSalesStatistics = () => {
                           fill="#10b981"
                           radius={[8, 8, 0, 0]}
                         >
-                          {salesByMonthStatistics.map((entry, index) => (
+                          {filteredSalesByMonthStatistics.map((entry, index) => (
                             <Cell key={`cell-trans-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Bar>
