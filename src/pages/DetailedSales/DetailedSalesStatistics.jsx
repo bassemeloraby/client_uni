@@ -13,7 +13,7 @@ import {
   FaFilter,
   FaFileInvoice
 } from 'react-icons/fa';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { customFetch } from "../../utils";
 
 const url = "detailed-sales/stats/pharmacies-by-branch";
@@ -460,7 +460,7 @@ const DetailedSalesStatistics = () => {
                 </table>
               </div>
 
-              {/* Pie Chart */}
+              {/* Column Chart */}
               <div className="card bg-base-200 shadow-md">
                 <div className="card-body">
                   <h3 className="card-title text-lg mb-4">
@@ -469,31 +469,35 @@ const DetailedSalesStatistics = () => {
                   </h3>
                   {pieChartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={400}>
-                        <PieChart>
-                          <Pie
-                            data={pieChartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={true}
-                            label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
+                        <BarChart data={pieChartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            interval={0}
+                          />
+                          <YAxis 
+                            tickFormatter={(value) => formatCurrency(value)}
+                          />
+                          <Tooltip 
+                            formatter={(value, name, props) => [
+                              `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
+                              'Sales'
+                            ]}
+                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                          />
+                          <Bar 
+                            dataKey="value" 
+                            fill="#3b82f6"
+                            radius={[8, 8, 0, 0]}
                           >
                             {pieChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px' }}
-                          />
-                          <Legend 
-                            verticalAlign="bottom" 
-                            height={36}
-                            formatter={(value, entry) => `${value} (${formatPercentage(entry.payload.percentage)}%)`}
-                          />
-                        </PieChart>
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-96">
