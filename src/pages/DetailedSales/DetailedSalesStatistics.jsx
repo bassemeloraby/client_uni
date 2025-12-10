@@ -11,7 +11,8 @@ import {
   FaShoppingCart,
   FaBox,
   FaFilter,
-  FaFileInvoice
+  FaFileInvoice,
+  FaCalendarAlt
 } from 'react-icons/fa';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { customFetch } from "../../utils";
@@ -19,6 +20,7 @@ import { customFetch } from "../../utils";
 const url = "detailed-sales/stats/pharmacies-by-branch";
 const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
+const salesByMonthUrl = "detailed-sales/stats/sales-by-month";
 
 export const loader = async ({ request }) => {
   try {
@@ -43,15 +45,18 @@ export const loader = async ({ request }) => {
     // Build sales by name URL with branchCode if provided
     let salesByNameUrlWithFilter = salesByNameUrl;
     let salesByInvoiceTypeUrlWithFilter = salesByInvoiceTypeUrl;
+    let salesByMonthUrlWithFilter = salesByMonthUrl;
     if (branchCode) {
       salesByNameUrlWithFilter += `?branchCode=${branchCode}`;
       salesByInvoiceTypeUrlWithFilter += `?branchCode=${branchCode}`;
+      salesByMonthUrlWithFilter += `?branchCode=${branchCode}`;
     }
 
-    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse] = await Promise.allSettled([
+    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse] = await Promise.allSettled([
       customFetch.get(url),
       customFetch.get(salesByNameUrlWithFilter),
       customFetch.get(salesByInvoiceTypeUrlWithFilter),
+      customFetch.get(salesByMonthUrlWithFilter),
     ]);
     
     const pharmacyStats = pharmacyStatsResponse.status === 'fulfilled' && pharmacyStatsResponse.value.data.success 
@@ -63,12 +68,16 @@ export const loader = async ({ request }) => {
     const salesByInvoiceTypeStats = salesByInvoiceTypeResponse.status === 'fulfilled' && salesByInvoiceTypeResponse.value.data.success 
       ? salesByInvoiceTypeResponse.value.data.data 
       : null;
+    const salesByMonthStats = salesByMonthResponse.status === 'fulfilled' && salesByMonthResponse.value.data.success 
+      ? salesByMonthResponse.value.data.data 
+      : null;
     
     if (pharmacyStats && salesByNameStats) {
       return {
         pharmacyStats,
         salesByNameStats,
         salesByInvoiceTypeStats,
+        salesByMonthStats,
         pharmacies,
         selectedBranchCode: branchCode || null,
       };
@@ -96,10 +105,11 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, pharmacies, selectedBranchCode } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, pharmacies, selectedBranchCode } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
   const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
+  const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get selected pharmacy name
@@ -698,6 +708,182 @@ const DetailedSalesStatistics = () => {
             <div className="text-center py-12">
               <p className="text-2xl text-base-content/70 mb-4">
                 No invoice type statistics available
+              </p>
+              <p className="text-base-content/50">
+                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sales by Month Statistics */}
+      <div className="card bg-base-100 shadow-xl mt-8">
+        <div className="card-body">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <h2 className="card-title">
+              <FaCalendarAlt className="text-primary" />
+              Sales by Month
+              {selectedPharmacy && (
+                <span className="text-lg font-normal text-base-content/70 ml-2">
+                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
+                </span>
+              )}
+            </h2>
+          </div>
+          
+          {salesByMonthStatistics && salesByMonthStatistics.length > 0 ? (
+            <>
+              {/* Sales by Month Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Months</div>
+                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalMonths || 0}</div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Sales</div>
+                  <div className="stat-value text-2xl">
+                    {formatCurrency(salesByMonthSummary?.totalSales || 0)}
+                  </div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Transactions</div>
+                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalTransactions || 0}</div>
+                </div>
+                <div className="stat bg-base-200 rounded-lg p-4">
+                  <div className="stat-title text-xs">Total Units Quantity</div>
+                  <div className="stat-value text-2xl">{salesByMonthSummary?.totalQuantity || 0}</div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto mb-6">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Total Sales</th>
+                      <th>% of Total</th>
+                      <th>Transactions</th>
+                      <th>Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesByMonthStatistics.map((stat) => (
+                      <tr key={`${stat.year}-${stat.month}`} className="hover">
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaCalendarAlt className="text-primary" />
+                            <span className="font-semibold">{stat.monthYear}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaDollarSign className="text-warning" />
+                            <span className="text-lg font-semibold text-success">
+                              {formatCurrency(stat.totalSales)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className="badge badge-primary badge-lg">
+                              {formatPercentage(stat.percentage)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaShoppingCart className="text-info" />
+                            <span className="font-semibold">{stat.totalTransactions}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaBox className="text-success" />
+                            <span className="font-semibold">{stat.totalQuantity}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Total</th>
+                      <th>
+                        <span className="text-lg font-semibold text-success">
+                          {formatCurrency(salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
+                        </span>
+                      </th>
+                      <th>
+                        <span className="badge badge-primary badge-lg">100.00%</span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold">
+                          {salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
+                        </span>
+                      </th>
+                      <th>
+                        <span className="text-lg font-semibold">
+                          {salesByMonthStatistics.reduce((sum, stat) => sum + stat.totalQuantity, 0)}
+                        </span>
+                      </th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Column Chart */}
+              <div className="card bg-base-200 shadow-md">
+                <div className="card-body">
+                  <h3 className="card-title text-lg mb-4">
+                    <FaChartBar className="text-primary" />
+                    Monthly Sales Distribution
+                  </h3>
+                  {salesByMonthStatistics.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={salesByMonthStatistics}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="monthYear" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          interval={0}
+                        />
+                        <YAxis 
+                          tickFormatter={(value) => formatCurrency(value)}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => [
+                            `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
+                            'Sales'
+                          ]}
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                        />
+                        <Bar 
+                          dataKey="totalSales" 
+                          fill="#3b82f6"
+                          radius={[8, 8, 0, 0]}
+                        >
+                          {salesByMonthStatistics.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-96">
+                      <p className="text-base-content/70">No data available for chart</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-2xl text-base-content/70 mb-4">
+                No monthly sales statistics available
               </p>
               <p className="text-base-content/50">
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
