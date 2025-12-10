@@ -910,6 +910,64 @@ const DetailedSalesStatistics = () => {
                   )}
                 </div>
               </div>
+
+              {/* Transactions Column Chart */}
+              <div className="card bg-base-200 shadow-md mt-6">
+                <div className="card-body">
+                  <h3 className="card-title text-lg mb-4">
+                    <FaChartBar className="text-primary" />
+                    Monthly Transactions Distribution
+                  </h3>
+                  {salesByMonthStatistics.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={450}>
+                      <BarChart data={salesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="monthYear" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={120}
+                          interval={0}
+                          tick={{ fontSize: 12, fill: '#666' }}
+                          tickFormatter={(value) => {
+                            // Shorten month names for better display
+                            const parts = value.split(' ');
+                            if (parts.length === 2) {
+                              const month = parts[0].substring(0, 3); // First 3 letters
+                              const year = parts[1];
+                              return `${month} ${year}`;
+                            }
+                            return value;
+                          }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12, fill: '#666' }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => [
+                            `${value} transactions`,
+                            'Transactions'
+                          ]}
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                        />
+                        <Bar 
+                          dataKey="totalTransactions" 
+                          fill="#10b981"
+                          radius={[8, 8, 0, 0]}
+                        >
+                          {salesByMonthStatistics.map((entry, index) => (
+                            <Cell key={`cell-trans-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-96">
+                      <p className="text-base-content/70">No data available for chart</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </>
           ) : (
             <div className="text-center py-12">
