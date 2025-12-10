@@ -860,18 +860,30 @@ const DetailedSalesStatistics = () => {
                     Monthly Sales Distribution
                   </h3>
                   {salesByMonthStatistics.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={salesByMonthStatistics}>
+                    <ResponsiveContainer width="100%" height={450}>
+                      <BarChart data={salesByMonthStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="monthYear" 
                           angle={-45}
                           textAnchor="end"
-                          height={100}
+                          height={120}
                           interval={0}
+                          tick={{ fontSize: 12, fill: '#666' }}
+                          tickFormatter={(value) => {
+                            // Shorten month names for better display
+                            const parts = value.split(' ');
+                            if (parts.length === 2) {
+                              const month = parts[0].substring(0, 3); // First 3 letters
+                              const year = parts[1];
+                              return `${month} ${year}`;
+                            }
+                            return value;
+                          }}
                         />
                         <YAxis 
                           tickFormatter={(value) => formatCurrency(value)}
+                          tick={{ fontSize: 12, fill: '#666' }}
                         />
                         <Tooltip 
                           formatter={(value, name, props) => [
