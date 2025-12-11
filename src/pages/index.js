@@ -22,6 +22,9 @@ export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
 export { default as DetailedSalesStatistics } from "./DetailedSales/DetailedSalesStatistics";
 export { default as CashPage } from "./CashPage";
 export { default as CashPageStatistics } from "./CashPageStatistics";
+export { default as InsurancePage } from "./InsurancePage";
+export { default as InsurancePageStatistics } from "./InsurancePageStatistics";
+export { default as InsurancePageSalesByName } from "./InsurancePageSalesByName";
 
 /** Incentive Items */
 export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";

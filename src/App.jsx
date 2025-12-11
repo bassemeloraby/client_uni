@@ -14,6 +14,9 @@ import { HomeLayout, Error,
   DetailedSalesStatistics,
   CashPage,
   CashPageStatistics,
+  InsurancePage,
+  InsurancePageStatistics,
+  InsurancePageSalesByName,
   IncentiveItemsPage,
   ContestsPage,
   Landing
@@ -167,6 +170,30 @@ const router = createBrowserRouter([{
       element: (
         <AdminRoute>
           <CashPageStatistics />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "insurance",
+      element: (
+        <AdminRoute>
+          <InsurancePage />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "insurance/statistics",
+      element: (
+        <AdminRoute>
+          <InsurancePageStatistics />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "insurance/sales-by-name",
+      element: (
+        <AdminRoute>
+          <InsurancePageSalesByName />
         </AdminRoute>
       ),
     },
