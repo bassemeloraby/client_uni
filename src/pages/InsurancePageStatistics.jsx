@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaShieldAlt, FaArrowLeft, FaUsers, FaDollarSign, FaShoppingCart, FaBox } from 'react-icons/fa';
+import { FaShieldAlt, FaArrowLeft, FaUsers, FaDollarSign, FaShoppingCart, FaBox, FaChartBar } from 'react-icons/fa';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { customFetch } from '../utils';
 
 const InsurancePageStatistics = () => {
@@ -41,6 +42,30 @@ const InsurancePageStatistics = () => {
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
+
+  const formatPercentage = (value) => {
+    return `${(value * 100).toFixed(2)}%`;
+  };
+
+  // Prepare chart data
+  const chartData = stats.map((stat) => {
+    const totalSales = summary?.totalSales || 0;
+    const percentage = totalSales > 0 ? (stat.totalSales / totalSales) : 0;
+    return {
+      name: stat.customerName,
+      value: stat.totalSales,
+      percentage: percentage,
+      transactions: stat.totalTransactions,
+      quantity: stat.totalQuantity,
+    };
+  });
+
+  // Colors for chart
+  const COLORS = [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
+    '#14b8a6', '#a855f7', '#eab308', '#dc2626', '#0ea5e9'
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -100,6 +125,60 @@ const InsurancePageStatistics = () => {
               <div className="stat bg-base-200 rounded-lg p-4">
                 <div className="stat-title text-xs">Total Units Quantity</div>
                 <div className="stat-value text-2xl">{summary?.totalQuantity || 0}</div>
+              </div>
+            </div>
+
+            {/* Column Chart */}
+            <div className="card bg-base-200 shadow-md mb-6">
+              <div className="card-body">
+                <h3 className="card-title text-lg mb-4">
+                  <FaChartBar className="text-primary" />
+                  Sales Distribution by Insurance Company
+                </h3>
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={450}>
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={120}
+                        interval={0}
+                        tick={{ fontSize: 12, fill: '#666' }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => formatCurrency(value)}
+                        tick={{ fontSize: 12, fill: '#666' }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'value') {
+                            return [
+                              `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
+                              'Sales'
+                            ];
+                          }
+                          return [value, name];
+                        }}
+                        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#3b82f6"
+                        radius={[8, 8, 0, 0]}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-96">
+                    <p className="text-base-content/70">No data available for chart</p>
+                  </div>
+                )}
               </div>
             </div>
 
