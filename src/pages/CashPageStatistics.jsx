@@ -8,12 +8,20 @@ const CashPageStatistics = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [month, setMonth] = useState('');
 
   const fetchStats = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await customFetch.get('detailed-sales/cash-detailed/statistics');
+      const res = await customFetch.get('detailed-sales/cash-detailed/statistics', {
+        params: month
+          ? {
+              year: month.split('-')[0],
+              month: month.split('-')[1],
+            }
+          : {},
+      });
       if (res.data?.success) {
         setStats(res.data.data.statistics || []);
         setSummary(res.data.data.summary || null);
@@ -29,7 +37,7 @@ const CashPageStatistics = () => {
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [month]);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
@@ -62,6 +70,20 @@ const CashPageStatistics = () => {
       {!isLoading && !error && (
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div className="form-control w-full md:w-auto">
+                <label className="label">
+                  <span className="label-text font-semibold">Filter by Month</span>
+                </label>
+                <input
+                  type="month"
+                  className="input input-bordered w-full md:w-60"
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="stat bg-base-200 rounded-lg p-4">
                 <div className="stat-title text-xs">Total Customers</div>

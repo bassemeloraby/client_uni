@@ -9,6 +9,7 @@ const CashPage = () => {
   const [sales, setSales] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [month, setMonth] = useState('');
   const pageSize = 50;
 
   const fetchSales = async () => {
@@ -19,6 +20,12 @@ const CashPage = () => {
         params: {
           limit: pageSize,
           skip: (page - 1) * pageSize,
+          ...(month
+            ? {
+                year: month.split('-')[0],
+                month: month.split('-')[1],
+              }
+            : {}),
         },
       });
       if (res.data?.success) {
@@ -36,7 +43,7 @@ const CashPage = () => {
 
   useEffect(() => {
     fetchSales();
-  }, [page]);
+  }, [page, month]);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
@@ -82,7 +89,24 @@ const CashPage = () => {
           )}
 
           {!isLoading && !error && (
-            <div className="overflow-x-auto">
+            <>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div className="form-control w-full md:w-auto">
+                  <label className="label">
+                    <span className="label-text font-semibold">Filter by Month</span>
+                  </label>
+                  <input
+                    type="month"
+                    className="input input-bordered w-full md:w-60"
+                    value={month}
+                    onChange={(e) => {
+                      setPage(1);
+                      setMonth(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
               <table className="table table-zebra w-full">
                 <thead>
                   <tr>
@@ -200,6 +224,7 @@ const CashPage = () => {
                 </tfoot>
               </table>
             </div>
+            </>
           )}
 
           {/* Pagination */}
