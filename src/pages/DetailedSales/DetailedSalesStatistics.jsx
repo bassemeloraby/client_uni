@@ -8,7 +8,6 @@ import {
   FaBuilding,
   FaDollarSign,
   FaUser,
-  FaUsers,
   FaShoppingCart,
   FaBox,
   FaFilter,
@@ -23,7 +22,6 @@ const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
 const salesByMonthUrl = "detailed-sales/stats/sales-by-month";
 const salesByDayUrl = "detailed-sales/stats/sales-by-day";
-const salesByCustomerNameUrl = "detailed-sales/stats/sales-by-customer-name";
 
 export const loader = async ({ request }) => {
   try {
@@ -46,16 +44,14 @@ export const loader = async ({ request }) => {
     const pharmaciesResponse = await customFetch.get('pharmacies');
     const pharmacies = pharmaciesResponse.data.success ? pharmaciesResponse.data.data : [];
 
-    // Get salesPersonMonth, invoiceTypeMonth, and customerNameMonth from URL params
+    // Get salesPersonMonth and invoiceTypeMonth from URL params
     const salesPersonMonth = params.get('salesPersonMonth'); // Format: "YYYY-MM"
     const invoiceTypeMonth = params.get('invoiceTypeMonth'); // Format: "YYYY-MM"
-    const customerNameMonth = params.get('customerNameMonth'); // Format: "YYYY-MM"
 
     // Build sales by name URL with branchCode and month if provided
     let salesByNameUrlWithFilter = salesByNameUrl;
     let salesByInvoiceTypeUrlWithFilter = salesByInvoiceTypeUrl;
     let salesByMonthUrlWithFilter = salesByMonthUrl;
-    let salesByCustomerNameUrlWithFilter = salesByCustomerNameUrl;
     
     const salesByNameParams = [];
     if (branchCode) salesByNameParams.push(`branchCode=${branchCode}`);
@@ -80,16 +76,6 @@ export const loader = async ({ request }) => {
     if (branchCode) {
       salesByMonthUrlWithFilter += `?branchCode=${branchCode}`;
     }
-    
-    const salesByCustomerNameParams = [];
-    if (branchCode) salesByCustomerNameParams.push(`branchCode=${branchCode}`);
-    if (customerNameMonth) {
-      const [year, monthNum] = customerNameMonth.split('-');
-      salesByCustomerNameParams.push(`year=${year}&month=${monthNum}`);
-    }
-    if (salesByCustomerNameParams.length > 0) {
-      salesByCustomerNameUrlWithFilter += `?${salesByCustomerNameParams.join('&')}`;
-    }
 
     // Build sales by day URL if month is selected
     let salesByDayUrlWithFilter = null;
@@ -107,14 +93,13 @@ export const loader = async ({ request }) => {
       customFetch.get(salesByNameUrlWithFilter),
       customFetch.get(salesByInvoiceTypeUrlWithFilter),
       customFetch.get(salesByMonthUrlWithFilter),
-      customFetch.get(salesByCustomerNameUrlWithFilter),
     ];
 
     if (salesByDayUrlWithFilter) {
       promises.push(customFetch.get(salesByDayUrlWithFilter));
     }
 
-    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByCustomerNameResponse, salesByDayResponse] = await Promise.allSettled(promises);
+    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByDayResponse] = await Promise.allSettled(promises);
     
     const pharmacyStats = pharmacyStatsResponse.status === 'fulfilled' && pharmacyStatsResponse.value.data.success 
       ? pharmacyStatsResponse.value.data.data 
@@ -128,9 +113,6 @@ export const loader = async ({ request }) => {
     const salesByMonthStats = salesByMonthResponse.status === 'fulfilled' && salesByMonthResponse.value.data.success 
       ? salesByMonthResponse.value.data.data 
       : null;
-    const salesByCustomerNameStats = salesByCustomerNameResponse.status === 'fulfilled' && salesByCustomerNameResponse.value.data.success 
-      ? salesByCustomerNameResponse.value.data.data 
-      : null;
     const salesByDayStats = salesByDayResponse && salesByDayResponse.status === 'fulfilled' && salesByDayResponse.value.data.success 
       ? salesByDayResponse.value.data.data 
       : null;
@@ -141,14 +123,12 @@ export const loader = async ({ request }) => {
         salesByNameStats,
         salesByInvoiceTypeStats,
         salesByMonthStats,
-        salesByCustomerNameStats,
         salesByDayStats,
         pharmacies,
         selectedBranchCode: branchCode || null,
         selectedMonth: month || null,
         selectedSalesPersonMonth: salesPersonMonth || null,
         selectedInvoiceTypeMonth: invoiceTypeMonth || null,
-        selectedCustomerNameMonth: customerNameMonth || null,
       };
     }
     throw new Error("Failed to fetch statistics");
@@ -174,19 +154,17 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByCustomerNameStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth, selectedCustomerNameMonth } = useLoaderData();
+  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth } = useLoaderData();
   const { statistics, summary } = pharmacyStats || {};
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
   const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
   const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
-  const { statistics: salesByCustomerNameStatistics, summary: salesByCustomerNameSummary } = salesByCustomerNameStats || {};
   const { statistics: salesByDayStatistics, summary: salesByDaySummary } = salesByDayStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
   const [showPharmaciesByBranch, setShowPharmaciesByBranch] = useState(false);
   const [showSalesBySalesPerson, setShowSalesBySalesPerson] = useState(false);
   const [showSalesByInvoiceType, setShowSalesByInvoiceType] = useState(false);
   const [showSalesByMonth, setShowSalesByMonth] = useState(false);
-  const [showSalesByCustomerName, setShowSalesByCustomerName] = useState(false);
 
   // Get selected pharmacy name
   const selectedPharmacy = pharmacies.find(p => p.branchCode === parseInt(selectedBranchCode || 0));
@@ -195,7 +173,6 @@ const DetailedSalesStatistics = () => {
   const currentSelectedMonth = selectedMonth || searchParams.get('month') || '';
   const currentSalesPersonMonth = selectedSalesPersonMonth || searchParams.get('salesPersonMonth') || '';
   const currentInvoiceTypeMonth = selectedInvoiceTypeMonth || searchParams.get('invoiceTypeMonth') || '';
-  const currentCustomerNameMonth = selectedCustomerNameMonth || searchParams.get('customerNameMonth') || '';
   
   // Determine if we should show daily data (when a month is selected)
   const showDailyData = currentSelectedMonth !== '';
@@ -222,13 +199,11 @@ const DetailedSalesStatistics = () => {
     const month = searchParams.get('month') || '';
     const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
     const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
-    const customerNameMonth = searchParams.get('customerNameMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
     if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
     if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    if (customerNameMonth) params.customerNameMonth = customerNameMonth;
     setSearchParams(params);
   };
 
@@ -238,13 +213,11 @@ const DetailedSalesStatistics = () => {
     const branchCode = searchParams.get('branchCode') || '';
     const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
     const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
-    const customerNameMonth = searchParams.get('customerNameMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
     if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
     if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    if (customerNameMonth) params.customerNameMonth = customerNameMonth;
     setSearchParams(params);
   };
 
@@ -254,13 +227,11 @@ const DetailedSalesStatistics = () => {
     const branchCode = searchParams.get('branchCode') || '';
     const month = searchParams.get('month') || '';
     const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
-    const customerNameMonth = searchParams.get('customerNameMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
     if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
     if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    if (customerNameMonth) params.customerNameMonth = customerNameMonth;
     setSearchParams(params);
   };
 
@@ -270,29 +241,11 @@ const DetailedSalesStatistics = () => {
     const branchCode = searchParams.get('branchCode') || '';
     const month = searchParams.get('month') || '';
     const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
-    const customerNameMonth = searchParams.get('customerNameMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
     if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
     if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    if (customerNameMonth) params.customerNameMonth = customerNameMonth;
-    setSearchParams(params);
-  };
-
-  // Handle month filter change for Sales by Customer Name section
-  const handleCustomerNameMonthChange = (e) => {
-    const customerNameMonth = e.target.value;
-    const branchCode = searchParams.get('branchCode') || '';
-    const month = searchParams.get('month') || '';
-    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
-    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
-    const params = {};
-    if (branchCode) params.branchCode = branchCode;
-    if (month) params.month = month;
-    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
-    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    if (customerNameMonth) params.customerNameMonth = customerNameMonth;
     setSearchParams(params);
   };
 
@@ -1394,244 +1347,6 @@ const DetailedSalesStatistics = () => {
               </p>
               <p className="text-base-content/50">
                 {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Sales by Customer Name Statistics */}
-      <div className="card bg-base-100 shadow-xl mt-8">
-        <div className="card-body">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="card-title">
-              <FaUsers className="text-primary" />
-              Sales by Customer Name
-              {selectedPharmacy && (
-                <span className="text-lg font-normal text-base-content/70 ml-2">
-                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
-                </span>
-              )}
-            </h2>
-            <button
-              onClick={() => setShowSalesByCustomerName(!showSalesByCustomerName)}
-              className="btn btn-sm btn-primary"
-            >
-              Sales by Customer Name
-            </button>
-          </div>
-          {showSalesByCustomerName && (
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="form-control w-full md:w-auto">
-                <label className="label">
-                  <span className="label-text font-semibold flex items-center gap-2">
-                    <FaFilter className="text-primary" />
-                    Filter by Pharmacy
-                  </span>
-                </label>
-                <select
-                  className="select select-bordered w-full md:w-64"
-                  value={selectedBranchCode || ''}
-                  onChange={handlePharmacyChange}
-                >
-                  <option value="">All Pharmacies</option>
-                  {pharmacies.map((pharmacy) => (
-                    <option key={pharmacy._id} value={pharmacy.branchCode}>
-                      {pharmacy.name} (Branch: {pharmacy.branchCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control w-full md:w-auto">
-                <label className="label">
-                  <span className="label-text font-semibold flex items-center gap-2">
-                    <FaCalendarAlt className="text-primary" />
-                    Filter by Month
-                  </span>
-                </label>
-                <select
-                  className="select select-bordered w-full md:w-64"
-                  value={currentCustomerNameMonth || ''}
-                  onChange={handleCustomerNameMonthChange}
-                >
-                  <option value="">All Months</option>
-                  {salesByMonthStatistics?.map((stat) => (
-                    <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
-                      {stat.monthYear}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-          
-          {showSalesByCustomerName && salesByCustomerNameStatistics && salesByCustomerNameStatistics.length > 0 ? (
-            <>
-              {/* Customer Name Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Customers</div>
-                  <div className="stat-value text-2xl">{salesByCustomerNameSummary?.totalCustomers || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Sales</div>
-                  <div className="stat-value text-2xl">
-                    {formatCurrency(salesByCustomerNameSummary?.totalSales || 0)}
-                  </div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Transactions</div>
-                  <div className="stat-value text-2xl">{salesByCustomerNameSummary?.totalTransactions || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Units Quantity</div>
-                  <div className="stat-value text-2xl">{salesByCustomerNameSummary?.totalQuantity || 0}</div>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto mb-6">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr>
-                      <th>Customer Name</th>
-                      <th>Total Sales</th>
-                      <th>% of Total</th>
-                      <th>Transactions</th>
-                      <th>APT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesByCustomerNameStatistics.map((stat) => (
-                      <tr key={stat.customerName} className="hover">
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaUsers className="text-primary" />
-                            <span className="font-semibold">{stat.customerName}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-warning" />
-                            <span className="text-lg font-semibold text-success">
-                              {formatCurrency(stat.totalSales)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className="badge badge-primary badge-lg">
-                              {formatPercentage(stat.percentage)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaShoppingCart className="text-info" />
-                            <span className="font-semibold">{stat.totalTransactions}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-primary" />
-                            <span className="text-lg font-semibold text-primary">
-                              {formatCurrency(stat.totalTransactions > 0 ? stat.totalSales / stat.totalTransactions : 0)}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th>Total</th>
-                      <th>
-                        <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByCustomerNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="badge badge-primary badge-lg">100.00%</span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByCustomerNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold text-primary">
-                          {(() => {
-                            const totalSales = salesByCustomerNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0);
-                            const totalTransactions = salesByCustomerNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0);
-                            return formatCurrency(totalTransactions > 0 ? totalSales / totalTransactions : 0);
-                          })()}
-                        </span>
-                      </th>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Column Chart */}
-              <div className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h3 className="card-title text-lg mb-4">
-                    <FaChartBar className="text-primary" />
-                    Sales Distribution by Customer
-                  </h3>
-                  {salesByCustomerNameStatistics.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={450}>
-                        <BarChart data={salesByCustomerNameStatistics} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="customerName" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={120}
-                            interval={0}
-                            tick={{ fontSize: 12, fill: '#666' }}
-                          />
-                          <YAxis 
-                            tickFormatter={(value) => formatCurrency(value)}
-                            tick={{ fontSize: 12, fill: '#666' }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name, props) => {
-                              const totalSales = salesByCustomerNameStatistics?.reduce((sum, stat) => sum + stat.totalSales, 0) || 0;
-                              const percentage = totalSales > 0 ? (value / totalSales) * 100 : 0;
-                              return [
-                                `${formatCurrency(value)} (${formatPercentage(percentage)}%)`,
-                                'Sales'
-                              ];
-                            }}
-                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
-                          />
-                          <Bar 
-                            dataKey="totalSales" 
-                            fill="#3b82f6"
-                            radius={[8, 8, 0, 0]}
-                          >
-                            {salesByCustomerNameStatistics.map((entry, index) => (
-                              <Cell key={`cell-customer-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96">
-                      <p className="text-base-content/70">No data available for chart</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : showSalesByCustomerName ? (
-            <div className="text-center py-12">
-              <p className="text-2xl text-base-content/70 mb-4">
-                No customer name statistics available
-              </p>
-              <p className="text-base-content/50">
-                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found with customer names'}
               </p>
             </div>
           ) : null}

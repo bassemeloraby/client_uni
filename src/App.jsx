@@ -12,6 +12,8 @@ import { HomeLayout, Error,
   SingleUser,
   DetailedSalesPage,
   DetailedSalesStatistics,
+  CashPage,
+  CashPageStatistics,
   IncentiveItemsPage,
   ContestsPage,
   Landing
@@ -151,6 +153,22 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: detailedSalesStatisticsLoader,
+    },
+    {
+      path: "cash",
+      element: (
+        <AdminRoute>
+          <CashPage />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "cash/statistics",
+      element: (
+        <AdminRoute>
+          <CashPageStatistics />
+        </AdminRoute>
+      ),
     },
     {
       path: "incentive-items",

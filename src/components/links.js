@@ -19,6 +19,7 @@ export const mainPages = [
     text: "Sales",
     ping: [
       { id: nanoid(), linkName: "Detailed Sales", link: "/detailed-sales" },
+      { id: nanoid(), linkName: "Cash Page", link: "/cash" },
       { id: nanoid(), linkName: "Incentive Items", link: "/incentive-items" },
       { id: nanoid(), linkName: "Contests", link: "/contests" },
     ],
