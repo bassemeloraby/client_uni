@@ -17,8 +17,6 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { customFetch } from "../../utils";
 
-const salesByNameUrl = "detailed-sales/stats/sales-by-name";
-const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
 const salesByMonthUrl = "detailed-sales/stats/sales-by-month";
 const salesByDayUrl = "detailed-sales/stats/sales-by-day";
 
@@ -43,34 +41,8 @@ export const loader = async ({ request }) => {
     const pharmaciesResponse = await customFetch.get('pharmacies');
     const pharmacies = pharmaciesResponse.data.success ? pharmaciesResponse.data.data : [];
 
-    // Get salesPersonMonth and invoiceTypeMonth from URL params
-    const salesPersonMonth = params.get('salesPersonMonth'); // Format: "YYYY-MM"
-    const invoiceTypeMonth = params.get('invoiceTypeMonth'); // Format: "YYYY-MM"
-
-    // Build sales by name URL with branchCode and month if provided
-    let salesByNameUrlWithFilter = salesByNameUrl;
-    let salesByInvoiceTypeUrlWithFilter = salesByInvoiceTypeUrl;
+    // Build sales by month URL with branchCode if provided
     let salesByMonthUrlWithFilter = salesByMonthUrl;
-    
-    const salesByNameParams = [];
-    if (branchCode) salesByNameParams.push(`branchCode=${branchCode}`);
-    if (salesPersonMonth) {
-      const [year, monthNum] = salesPersonMonth.split('-');
-      salesByNameParams.push(`year=${year}&month=${monthNum}`);
-    }
-    if (salesByNameParams.length > 0) {
-      salesByNameUrlWithFilter += `?${salesByNameParams.join('&')}`;
-    }
-    
-    const salesByInvoiceTypeParams = [];
-    if (branchCode) salesByInvoiceTypeParams.push(`branchCode=${branchCode}`);
-    if (invoiceTypeMonth) {
-      const [year, monthNum] = invoiceTypeMonth.split('-');
-      salesByInvoiceTypeParams.push(`year=${year}&month=${monthNum}`);
-    }
-    if (salesByInvoiceTypeParams.length > 0) {
-      salesByInvoiceTypeUrlWithFilter += `?${salesByInvoiceTypeParams.join('&')}`;
-    }
     
     if (branchCode) {
       salesByMonthUrlWithFilter += `?branchCode=${branchCode}`;
@@ -88,8 +60,6 @@ export const loader = async ({ request }) => {
     }
 
     const promises = [
-      customFetch.get(salesByNameUrlWithFilter),
-      customFetch.get(salesByInvoiceTypeUrlWithFilter),
       customFetch.get(salesByMonthUrlWithFilter),
     ];
 
@@ -97,35 +67,34 @@ export const loader = async ({ request }) => {
       promises.push(customFetch.get(salesByDayUrlWithFilter));
     }
 
-    const [salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByDayResponse] = await Promise.allSettled(promises);
+    const responses = await Promise.allSettled(promises);
     
-    const salesByNameStats = salesByNameResponse.status === 'fulfilled' && salesByNameResponse.value.data.success 
-      ? salesByNameResponse.value.data.data 
-      : null;
-    const salesByInvoiceTypeStats = salesByInvoiceTypeResponse.status === 'fulfilled' && salesByInvoiceTypeResponse.value.data.success 
-      ? salesByInvoiceTypeResponse.value.data.data 
-      : null;
-    const salesByMonthStats = salesByMonthResponse.status === 'fulfilled' && salesByMonthResponse.value.data.success 
+    const salesByMonthResponse = responses[0];
+    const salesByDayResponse = responses[1]; // Will be undefined if salesByDayUrlWithFilter was null
+    
+    // Log errors for debugging
+    if (salesByMonthResponse.status === 'rejected') {
+      console.error('Error fetching sales by month:', salesByMonthResponse.reason);
+    }
+    if (salesByDayResponse && salesByDayResponse.status === 'rejected') {
+      console.error('Error fetching sales by day:', salesByDayResponse.reason);
+    }
+    
+    const salesByMonthStats = salesByMonthResponse.status === 'fulfilled' && salesByMonthResponse.value?.data?.success 
       ? salesByMonthResponse.value.data.data 
       : null;
-    const salesByDayStats = salesByDayResponse && salesByDayResponse.status === 'fulfilled' && salesByDayResponse.value.data.success 
+    const salesByDayStats = salesByDayResponse && salesByDayResponse.status === 'fulfilled' && salesByDayResponse.value?.data?.success 
       ? salesByDayResponse.value.data.data 
       : null;
     
-    if (salesByNameStats) {
-      return {
-        salesByNameStats,
-        salesByInvoiceTypeStats,
-        salesByMonthStats,
-        salesByDayStats,
-        pharmacies,
-        selectedBranchCode: branchCode || null,
-        selectedMonth: month || null,
-        selectedSalesPersonMonth: salesPersonMonth || null,
-        selectedInvoiceTypeMonth: invoiceTypeMonth || null,
-      };
-    }
-    throw new Error("Failed to fetch statistics");
+    // Return data even if some stats are null - let the component handle empty states
+    return {
+      salesByMonthStats,
+      salesByDayStats,
+      pharmacies,
+      selectedBranchCode: branchCode || null,
+      selectedMonth: month || null,
+    };
   } catch (error) {
     console.error("Error fetching statistics:", error);
     
@@ -148,14 +117,10 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth } = useLoaderData();
-  const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
-  const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
+  const { salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth } = useLoaderData();
   const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
   const { statistics: salesByDayStatistics, summary: salesByDaySummary } = salesByDayStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showSalesBySalesPerson, setShowSalesBySalesPerson] = useState(false);
-  const [showSalesByInvoiceType, setShowSalesByInvoiceType] = useState(false);
   const [showSalesByMonth, setShowSalesByMonth] = useState(false);
 
   // Get selected pharmacy name
@@ -163,8 +128,6 @@ const DetailedSalesStatistics = () => {
   
   // Get selected month from URL params (use from loader or searchParams)
   const currentSelectedMonth = selectedMonth || searchParams.get('month') || '';
-  const currentSalesPersonMonth = selectedSalesPersonMonth || searchParams.get('salesPersonMonth') || '';
-  const currentInvoiceTypeMonth = selectedInvoiceTypeMonth || searchParams.get('invoiceTypeMonth') || '';
   
   // Determine if we should show daily data (when a month is selected)
   const showDailyData = currentSelectedMonth !== '';
@@ -189,13 +152,9 @@ const DetailedSalesStatistics = () => {
   const handlePharmacyChange = (e) => {
     const branchCode = e.target.value;
     const month = searchParams.get('month') || '';
-    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
-    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
-    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
-    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
     setSearchParams(params);
   };
 
@@ -203,43 +162,12 @@ const DetailedSalesStatistics = () => {
   const handleMonthChange = (e) => {
     const month = e.target.value;
     const branchCode = searchParams.get('branchCode') || '';
-    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
-    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
     const params = {};
     if (branchCode) params.branchCode = branchCode;
     if (month) params.month = month;
-    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
-    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
     setSearchParams(params);
   };
 
-  // Handle month filter change for Sales by Sales Person section
-  const handleSalesPersonMonthChange = (e) => {
-    const salesPersonMonth = e.target.value;
-    const branchCode = searchParams.get('branchCode') || '';
-    const month = searchParams.get('month') || '';
-    const invoiceTypeMonth = searchParams.get('invoiceTypeMonth') || '';
-    const params = {};
-    if (branchCode) params.branchCode = branchCode;
-    if (month) params.month = month;
-    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
-    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    setSearchParams(params);
-  };
-
-  // Handle month filter change for Sales by Invoice Type section
-  const handleInvoiceTypeMonthChange = (e) => {
-    const invoiceTypeMonth = e.target.value;
-    const branchCode = searchParams.get('branchCode') || '';
-    const month = searchParams.get('month') || '';
-    const salesPersonMonth = searchParams.get('salesPersonMonth') || '';
-    const params = {};
-    if (branchCode) params.branchCode = branchCode;
-    if (month) params.month = month;
-    if (salesPersonMonth) params.salesPersonMonth = salesPersonMonth;
-    if (invoiceTypeMonth) params.invoiceTypeMonth = invoiceTypeMonth;
-    setSearchParams(params);
-  };
 
   // Filter sales by month statistics based on selected month
   const filteredSalesByMonthStatistics = selectedMonth
@@ -254,13 +182,6 @@ const DetailedSalesStatistics = () => {
         return monthValue === selectedMonth;
       }) || []
     : salesByMonthStatistics || [];
-
-  // Prepare data for pie chart
-  const pieChartData = salesByNameStatistics?.map((stat, index) => ({
-    name: stat.salesName,
-    value: stat.totalSales,
-    percentage: stat.percentage,
-  })) || [];
 
   // Colors for pie chart
   const COLORS = [
@@ -296,466 +217,33 @@ const DetailedSalesStatistics = () => {
               Detailed Sales Statistics
             </h1>
           </div>
-          <Link
-            to="/detailed-sales/statistics/sales-by-pharmacies"
-            className="btn btn-primary gap-2"
-          >
-            <FaStore />
-            View Sales by Pharmacies
-          </Link>
+          <div className="flex gap-2 flex-wrap">
+            <Link
+              to="/detailed-sales/statistics/sales-by-pharmacies"
+              className="btn btn-primary gap-2"
+            >
+              <FaStore />
+              View Sales by Pharmacies
+            </Link>
+            <Link
+              to="/detailed-sales/statistics/sales-by-sales-person"
+              className="btn btn-primary gap-2"
+            >
+              <FaUser />
+              View Sales by Sales Person
+            </Link>
+            <Link
+              to="/detailed-sales/statistics/sales-by-invoice-type"
+              className="btn btn-primary gap-2"
+            >
+              <FaFileInvoice />
+              View Sales by Invoice Type
+            </Link>
+          </div>
         </div>
         <p className="text-base-content/70">
           Comprehensive sales statistics and analytics
         </p>
-      </div>
-
-      {/* Sales Name Statistics */}
-      <div className="card bg-base-100 shadow-xl mt-8">
-        <div className="card-body">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="card-title">
-              <FaUser className="text-primary" />
-              Sales by Sales Person
-              {selectedPharmacy && (
-                <span className="text-lg font-normal text-base-content/70 ml-2">
-                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
-                </span>
-              )}
-            </h2>
-            <button
-              onClick={() => setShowSalesBySalesPerson(!showSalesBySalesPerson)}
-              className="btn btn-sm btn-primary"
-            >
-              Sales by Sales Person
-            </button>
-          </div>
-          {showSalesBySalesPerson && (
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="form-control w-full md:w-auto">
-                <label className="label">
-                  <span className="label-text font-semibold flex items-center gap-2">
-                    <FaFilter className="text-primary" />
-                    Filter by Pharmacy
-                  </span>
-                </label>
-                <select
-                  className="select select-bordered w-full md:w-64"
-                  value={selectedBranchCode || ''}
-                  onChange={handlePharmacyChange}
-                >
-                  <option value="">All Pharmacies</option>
-                  {pharmacies.map((pharmacy) => (
-                    <option key={pharmacy._id} value={pharmacy.branchCode}>
-                      {pharmacy.name} (Branch: {pharmacy.branchCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control w-full md:w-auto">
-                <label className="label">
-                  <span className="label-text font-semibold flex items-center gap-2">
-                    <FaCalendarAlt className="text-primary" />
-                    Filter by Month
-                  </span>
-                </label>
-                <select
-                  className="select select-bordered w-full md:w-64"
-                  value={currentSalesPersonMonth || ''}
-                  onChange={handleSalesPersonMonthChange}
-                >
-                  <option value="">All Months</option>
-                  {salesByMonthStatistics?.map((stat) => (
-                    <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
-                      {stat.monthYear}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-          
-          {showSalesBySalesPerson && salesByNameStatistics && salesByNameStatistics.length > 0 ? (
-            <>
-              {/* Sales Name Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Sales Persons</div>
-                  <div className="stat-value text-2xl">{salesByNameSummary?.totalSalesPersons || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Sales</div>
-                  <div className="stat-value text-2xl">
-                    {formatCurrency(salesByNameSummary?.totalSales || 0)}
-                  </div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Transactions</div>
-                  <div className="stat-value text-2xl">{salesByNameSummary?.totalTransactions || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Units Quantity</div>
-                  <div className="stat-value text-2xl">{salesByNameSummary?.totalQuantity || 0}</div>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto mb-6">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr>
-                      <th>Sales Person</th>
-                      <th>Total Sales</th>
-                      <th>% of Total</th>
-                      <th>Transactions</th>
-                      <th>APT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesByNameStatistics.map((stat) => (
-                      <tr key={stat.salesName} className="hover">
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaUser className="text-primary" />
-                            <span className="font-semibold">{stat.salesName}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-warning" />
-                            <span className="text-lg font-semibold text-success">
-                              {formatCurrency(stat.totalSales)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className="badge badge-primary badge-lg">
-                              {formatPercentage(stat.percentage)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaShoppingCart className="text-info" />
-                            <span className="font-semibold">{stat.totalTransactions}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-primary" />
-                            <span className="text-lg font-semibold text-primary">
-                              {formatCurrency(stat.totalTransactions > 0 ? stat.totalSales / stat.totalTransactions : 0)}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th>Total</th>
-                      <th>
-                        <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="badge badge-primary badge-lg">100.00%</span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold text-primary">
-                          {(() => {
-                            const totalSales = salesByNameStatistics.reduce((sum, stat) => sum + stat.totalSales, 0);
-                            const totalTransactions = salesByNameStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0);
-                            return formatCurrency(totalTransactions > 0 ? totalSales / totalTransactions : 0);
-                          })()}
-                        </span>
-                      </th>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Column Chart */}
-              <div className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h3 className="card-title text-lg mb-4">
-                    <FaChartBar className="text-primary" />
-                    Sales Distribution
-                  </h3>
-                  {pieChartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={450}>
-                        <BarChart data={pieChartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="name" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={120}
-                            interval={0}
-                            tick={{ fontSize: 12, fill: '#666' }}
-                          />
-                          <YAxis 
-                            tickFormatter={(value) => formatCurrency(value)}
-                            tick={{ fontSize: 12, fill: '#666' }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name, props) => [
-                              `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
-                              'Sales'
-                            ]}
-                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
-                          />
-                          <Bar 
-                            dataKey="value" 
-                            fill="#3b82f6"
-                            radius={[8, 8, 0, 0]}
-                          >
-                            {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96">
-                      <p className="text-base-content/70">No data available for chart</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : showSalesBySalesPerson ? (
-            <div className="text-center py-12">
-              <p className="text-2xl text-base-content/70 mb-4">
-                No sales person statistics available
-              </p>
-              <p className="text-base-content/50">
-                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Sales by Invoice Type Statistics */}
-      <div className="card bg-base-100 shadow-xl mt-8">
-        <div className="card-body">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="card-title">
-              <FaFileInvoice className="text-primary" />
-              Sales by Invoice Type
-              {selectedPharmacy && (
-                <span className="text-lg font-normal text-base-content/70 ml-2">
-                  - {selectedPharmacy.name} (Branch: {selectedPharmacy.branchCode})
-                </span>
-              )}
-            </h2>
-            <button
-              onClick={() => setShowSalesByInvoiceType(!showSalesByInvoiceType)}
-              className="btn btn-sm btn-primary"
-            >
-              Sales by Invoice Type
-            </button>
-          </div>
-          {showSalesByInvoiceType && (
-            <div className="form-control w-full md:w-auto mb-4">
-              <label className="label">
-                <span className="label-text font-semibold flex items-center gap-2">
-                  <FaCalendarAlt className="text-primary" />
-                  Filter by Month
-                </span>
-              </label>
-              <select
-                className="select select-bordered w-full md:w-64"
-                value={currentInvoiceTypeMonth || ''}
-                onChange={handleInvoiceTypeMonthChange}
-              >
-                <option value="">All Months</option>
-                {salesByMonthStatistics?.map((stat) => (
-                  <option key={`${stat.year}-${stat.month}`} value={`${stat.year}-${String(stat.month).padStart(2, '0')}`}>
-                    {stat.monthYear}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {showSalesByInvoiceType && salesByInvoiceTypeStatistics && salesByInvoiceTypeStatistics.length > 0 ? (
-            <>
-              {/* Invoice Type Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Invoice Types</div>
-                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalInvoiceTypes || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Sales</div>
-                  <div className="stat-value text-2xl">
-                    {formatCurrency(salesByInvoiceTypeSummary?.totalSales || 0)}
-                  </div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Transactions</div>
-                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalTransactions || 0}</div>
-                </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Total Units Quantity</div>
-                  <div className="stat-value text-2xl">{salesByInvoiceTypeSummary?.totalQuantity || 0}</div>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto mb-6">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr>
-                      <th>Invoice Type</th>
-                      <th>Total Sales</th>
-                      <th>% of Total</th>
-                      <th>Transactions</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesByInvoiceTypeStatistics.map((stat) => (
-                      <tr key={stat.invoiceType} className="hover">
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaFileInvoice className="text-primary" />
-                            <span className="font-semibold">{stat.invoiceType}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaDollarSign className="text-warning" />
-                            <span className="text-lg font-semibold text-success">
-                              {formatCurrency(stat.totalSales)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className="badge badge-primary badge-lg">
-                              {formatPercentage(stat.percentage)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FaShoppingCart className="text-info" />
-                            <span className="font-semibold">{stat.totalTransactions}</span>
-                          </div>
-                        </td>
-                        <td>
-                          {stat.invoiceType === 'Total insurance' || stat.invoiceType === 'Total Online' || stat.invoiceType === 'Total CashCustomer' || stat.invoiceType === 'Total Normal' ? (
-                            <span className="text-base-content/50 text-sm">N/A</span>
-                          ) : (
-                            <Link
-                              to={`/detailed-sales?invoiceType=${encodeURIComponent(stat.invoiceType)}${selectedBranchCode ? `&branchCode=${selectedBranchCode}` : ''}`}
-                              className="btn btn-sm btn-primary gap-2"
-                            >
-                              <FaChartBar />
-                              View
-                            </Link>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th>Total</th>
-                      <th>
-                        <span className="text-lg font-semibold text-success">
-                          {formatCurrency(salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                        </span>
-                      </th>
-                      <th>
-                        <span className="badge badge-primary badge-lg">100.00%</span>
-                      </th>
-                      <th>
-                        <span className="text-lg font-semibold">
-                          {salesByInvoiceTypeStatistics.reduce((sum, stat) => sum + stat.totalTransactions, 0)}
-                        </span>
-                      </th>
-                      <th></th>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Pie Chart */}
-              <div className="card bg-base-200 shadow-md">
-                <div className="card-body">
-                  <h3 className="card-title text-lg mb-4">
-                    <FaChartBar className="text-primary" />
-                    Invoice Type Distribution
-                  </h3>
-                  {salesByInvoiceTypeStatistics.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
-                        <Pie
-                          data={salesByInvoiceTypeStatistics.map((stat, index) => ({
-                            name: stat.invoiceType,
-                            value: stat.totalSales,
-                            percentage: stat.percentage,
-                          }))}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={true}
-                          label={({ name, percentage }) => `${name}: ${formatPercentage(percentage)}%`}
-                          outerRadius={120}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {salesByInvoiceTypeStatistics.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value, name, props) => [
-                            `${formatCurrency(value)} (${formatPercentage(props.payload.percentage)}%)`,
-                            props.payload.name
-                          ]}
-                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none', borderRadius: '8px', color: 'white' }}
-                        />
-                        <Legend 
-                          verticalAlign="bottom" 
-                          height={60}
-                          wrapperStyle={{ paddingTop: '20px' }}
-                          formatter={(value, entry) => (
-                            <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                              {value}: {formatPercentage(entry.payload.percentage)}%
-                            </span>
-                          )}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96">
-                      <p className="text-base-content/70">No data available for chart</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : showSalesByInvoiceType ? (
-            <div className="text-center py-12">
-              <p className="text-2xl text-base-content/70 mb-4">
-                No invoice type statistics available
-              </p>
-              <p className="text-base-content/50">
-                {selectedBranchCode ? 'No sales records found for this pharmacy' : 'No sales records found'}
-              </p>
-            </div>
-          ) : null}
-        </div>
       </div>
 
       {/* Sales by Month Statistics */}

@@ -13,6 +13,8 @@ import { HomeLayout, Error,
   DetailedSalesPage,
   DetailedSalesStatistics,
   SalesByPharmacies,
+  SalesBySalesPerson,
+  SalesByInvoiceType,
   CashPage,
   CashPageStatistics,
   InsurancePage,
@@ -163,6 +165,22 @@ const router = createBrowserRouter([{
       element: (
         <AdminRoute>
           <SalesByPharmacies />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "detailed-sales/statistics/sales-by-sales-person",
+      element: (
+        <AdminRoute>
+          <SalesBySalesPerson />
+        </AdminRoute>
+      ),
+    },
+    {
+      path: "detailed-sales/statistics/sales-by-invoice-type",
+      element: (
+        <AdminRoute>
+          <SalesByInvoiceType />
         </AdminRoute>
       ),
     },
