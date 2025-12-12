@@ -12,6 +12,7 @@ import { HomeLayout, Error,
   SingleUser,
   DetailedSalesPage,
   DetailedSalesStatistics,
+  SalesByPharmacies,
   CashPage,
   CashPageStatistics,
   InsurancePage,
@@ -156,6 +157,14 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: detailedSalesStatisticsLoader,
+    },
+    {
+      path: "detailed-sales/statistics/sales-by-pharmacies",
+      element: (
+        <AdminRoute>
+          <SalesByPharmacies />
+        </AdminRoute>
+      ),
     },
     {
       path: "cash",

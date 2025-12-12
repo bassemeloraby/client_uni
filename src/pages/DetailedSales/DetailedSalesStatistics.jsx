@@ -17,7 +17,6 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { customFetch } from "../../utils";
 
-const url = "detailed-sales/stats/pharmacies-by-branch";
 const salesByNameUrl = "detailed-sales/stats/sales-by-name";
 const salesByInvoiceTypeUrl = "detailed-sales/stats/sales-by-invoice-type";
 const salesByMonthUrl = "detailed-sales/stats/sales-by-month";
@@ -89,7 +88,6 @@ export const loader = async ({ request }) => {
     }
 
     const promises = [
-      customFetch.get(url),
       customFetch.get(salesByNameUrlWithFilter),
       customFetch.get(salesByInvoiceTypeUrlWithFilter),
       customFetch.get(salesByMonthUrlWithFilter),
@@ -99,11 +97,8 @@ export const loader = async ({ request }) => {
       promises.push(customFetch.get(salesByDayUrlWithFilter));
     }
 
-    const [pharmacyStatsResponse, salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByDayResponse] = await Promise.allSettled(promises);
+    const [salesByNameResponse, salesByInvoiceTypeResponse, salesByMonthResponse, salesByDayResponse] = await Promise.allSettled(promises);
     
-    const pharmacyStats = pharmacyStatsResponse.status === 'fulfilled' && pharmacyStatsResponse.value.data.success 
-      ? pharmacyStatsResponse.value.data.data 
-      : null;
     const salesByNameStats = salesByNameResponse.status === 'fulfilled' && salesByNameResponse.value.data.success 
       ? salesByNameResponse.value.data.data 
       : null;
@@ -117,9 +112,8 @@ export const loader = async ({ request }) => {
       ? salesByDayResponse.value.data.data 
       : null;
     
-    if (pharmacyStats && salesByNameStats) {
+    if (salesByNameStats) {
       return {
-        pharmacyStats,
         salesByNameStats,
         salesByInvoiceTypeStats,
         salesByMonthStats,
@@ -154,14 +148,12 @@ export const loader = async ({ request }) => {
 };
 
 const DetailedSalesStatistics = () => {
-  const { pharmacyStats, salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth } = useLoaderData();
-  const { statistics, summary } = pharmacyStats || {};
+  const { salesByNameStats, salesByInvoiceTypeStats, salesByMonthStats, salesByDayStats, pharmacies, selectedBranchCode, selectedMonth, selectedSalesPersonMonth, selectedInvoiceTypeMonth } = useLoaderData();
   const { statistics: salesByNameStatistics, summary: salesByNameSummary } = salesByNameStats || {};
   const { statistics: salesByInvoiceTypeStatistics, summary: salesByInvoiceTypeSummary } = salesByInvoiceTypeStats || {};
   const { statistics: salesByMonthStatistics, summary: salesByMonthSummary } = salesByMonthStats || {};
   const { statistics: salesByDayStatistics, summary: salesByDaySummary } = salesByDayStats || {};
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showPharmaciesByBranch, setShowPharmaciesByBranch] = useState(false);
   const [showSalesBySalesPerson, setShowSalesBySalesPerson] = useState(false);
   const [showSalesByInvoiceType, setShowSalesByInvoiceType] = useState(false);
   const [showSalesByMonth, setShowSalesByMonth] = useState(false);
@@ -297,172 +289,24 @@ const DetailedSalesStatistics = () => {
       </div>
 
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <FaChartBar className="text-4xl text-primary" />
-          <h1 className="text-4xl font-bold text-primary">
-            Detailed Sales Statistics
-          </h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <FaChartBar className="text-4xl text-primary" />
+            <h1 className="text-4xl font-bold text-primary">
+              Detailed Sales Statistics
+            </h1>
+          </div>
+          <Link
+            to="/detailed-sales/statistics/sales-by-pharmacies"
+            className="btn btn-primary gap-2"
+          >
+            <FaStore />
+            View Sales by Pharmacies
+          </Link>
         </div>
         <p className="text-base-content/70">
-          Statistics showing the number of pharmacies using each branch code
+          Comprehensive sales statistics and analytics
         </p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <FaHashtag className="text-2xl text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm text-base-content/70">Total Branch Codes</h3>
-                <p className="text-3xl font-bold">{summary.totalBranchCodes}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-success/10 rounded-lg">
-                <FaBuilding className="text-2xl text-success" />
-              </div>
-              <div>
-                <h3 className="text-sm text-base-content/70">Total Pharmacies</h3>
-                <p className="text-3xl font-bold">{summary.totalPharmacies}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-warning/10 rounded-lg">
-                <FaDollarSign className="text-2xl text-warning" />
-              </div>
-              <div>
-                <h3 className="text-sm text-base-content/70">Total Sales</h3>
-                <p className="text-3xl font-bold">
-                  {new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }).format(summary.totalSales || 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics Table */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="card-title">
-              <FaStore className="text-primary" />
-              Pharmacies by Branch Code
-            </h2>
-            <button
-              onClick={() => setShowPharmaciesByBranch(!showPharmaciesByBranch)}
-              className="btn btn-sm btn-primary"
-            >
-              Pharmacies by Branch Code
-            </button>
-          </div>
-          
-          {showPharmaciesByBranch && statistics && statistics.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="table table-zebra w-full">
-                <thead>
-                  <tr>
-                    <th>Branch Code</th>
-                    <th>Number of Pharmacies</th>
-                    <th>Total Sales</th>
-                    <th>% of Total</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {statistics.map((stat) => (
-                    <tr key={stat.branchCode} className="hover">
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <FaHashtag className="text-primary" />
-                          <span className="font-mono font-semibold">{stat.branchCode}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <FaBuilding className="text-success" />
-                          <span className="text-lg font-semibold">{stat.pharmacyCount}</span>
-                          <span className="text-sm text-base-content/70">
-                            {stat.pharmacyCount === 1 ? 'pharmacy' : 'pharmacies'}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <FaDollarSign className="text-warning" />
-                          <span className="text-lg font-semibold text-success">
-                            {formatCurrency(stat.totalSales)}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <span className="badge badge-primary badge-lg">
-                            {formatPercentage(stat.percentage)}%
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <Link
-                          to={`/detailed-sales?branchCode=${stat.branchCode}`}
-                          className="btn btn-sm btn-primary gap-2"
-                        >
-                          <FaChartBar />
-                          View Sales
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th>Total</th>
-                    <th>
-                      <span className="text-lg font-semibold">
-                        {statistics.reduce((sum, stat) => sum + stat.pharmacyCount, 0)}
-                      </span>
-                    </th>
-                    <th>
-                      <span className="text-lg font-semibold text-success">
-                        {formatCurrency(statistics.reduce((sum, stat) => sum + stat.totalSales, 0))}
-                      </span>
-                    </th>
-                    <th>
-                      <span className="badge badge-primary badge-lg">100.00%</span>
-                    </th>
-                    <th></th>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          ) : showPharmaciesByBranch ? (
-            <div className="text-center py-12">
-              <p className="text-2xl text-base-content/70 mb-4">
-                No statistics available
-              </p>
-              <p className="text-base-content/50">
-                No branch codes found in detailed sales records
-              </p>
-            </div>
-          ) : null}
-        </div>
       </div>
 
       {/* Sales Name Statistics */}

@@ -20,6 +20,7 @@ export { default as SingleUser } from "./Users/SingleUser";
 /** Detailed Sales */
 export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
 export { default as DetailedSalesStatistics } from "./DetailedSales/DetailedSalesStatistics";
+export { default as SalesByPharmacies } from "./DetailedSales/SalesByPharmacies";
 export { default as CashPage } from "./CashPage";
 export { default as CashPageStatistics } from "./CashPageStatistics";
 export { default as InsurancePage } from "./InsurancePage";
