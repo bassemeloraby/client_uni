@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
 import { FaFileInvoice, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft } from 'react-icons/fa';
 import { customFetch } from '../../utils';
+import dayjs from 'dayjs';
 
 const url = "detailed-sales";
 
@@ -22,7 +23,8 @@ export const loader = async ({ request }) => {
     
     if (params.get('branchCode')) queryParams.branchCode = params.get('branchCode');
     if (params.get('invoiceNumber')) queryParams.invoiceNumber = params.get('invoiceNumber');
-    if (params.get('invoiceDate')) queryParams.invoiceDate = params.get('invoiceDate');
+    if (params.get('startDate')) queryParams.startDate = params.get('startDate');
+    if (params.get('endDate')) queryParams.endDate = params.get('endDate');
     if (params.get('invoiceType')) queryParams.invoiceType = params.get('invoiceType');
     if (params.get('salesName')) queryParams.salesName = params.get('salesName');
     if (params.get('customerName')) queryParams.customerName = params.get('customerName');
@@ -71,7 +73,8 @@ const DetailedSales = () => {
   // Filters
   const [branchCode, setBranchCode] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [invoiceDate, setInvoiceDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [invoiceType, setInvoiceType] = useState('');
   const [salesName, setSalesName] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -89,7 +92,8 @@ const DetailedSales = () => {
 
       if (branchCode) params.branchCode = branchCode;
       if (invoiceNumber) params.invoiceNumber = invoiceNumber;
-      if (invoiceDate) params.invoiceDate = invoiceDate;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
       if (invoiceType) params.invoiceType = invoiceType;
       if (salesName) params.salesName = salesName;
       if (customerName) params.customerName = customerName;
@@ -112,12 +116,13 @@ const DetailedSales = () => {
 
   useEffect(() => {
     fetchSales();
-  }, [page, branchCode, invoiceNumber, invoiceDate, invoiceType, salesName, customerName, materialNumber, search]);
+  }, [page, branchCode, invoiceNumber, startDate, endDate, invoiceType, salesName, customerName, materialNumber, search]);
 
   const handleResetFilters = () => {
     setBranchCode('');
     setInvoiceNumber('');
-    setInvoiceDate('');
+    setStartDate('');
+    setEndDate('');
     setInvoiceType('');
     setSalesName('');
     setCustomerName('');
@@ -200,16 +205,61 @@ const DetailedSales = () => {
               <label className="label">
                 <span className="label-text font-semibold flex items-center gap-2">
                   <FaCalendarAlt className="text-primary" />
-                  Invoice Date
+                  Start Date
                 </span>
               </label>
               <input
-                type="text"
+                type="date"
                 className="input input-bordered"
-                placeholder="e.g., 3/24/2025"
-                value={invoiceDate}
+                value={(() => {
+                  if (!startDate) return '';
+                  // Try parsing as M/D/YYYY format first (backend format)
+                  if (dayjs(startDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(startDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  }
+                  // If already in YYYY-MM-DD format, use as is
+                  if (dayjs(startDate, 'YYYY-MM-DD', true).isValid()) {
+                    return startDate;
+                  }
+                  return '';
+                })()}
                 onChange={(e) => {
-                  setInvoiceDate(e.target.value);
+                  const selectedDate = e.target.value;
+                  // Format date as M/D/YYYY for backend compatibility
+                  const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
+                  setStartDate(formattedDate);
+                  setPage(1);
+                }}
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold flex items-center gap-2">
+                  <FaCalendarAlt className="text-primary" />
+                  End Date
+                </span>
+              </label>
+              <input
+                type="date"
+                className="input input-bordered"
+                value={(() => {
+                  if (!endDate) return '';
+                  // Try parsing as M/D/YYYY format first (backend format)
+                  if (dayjs(endDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(endDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  }
+                  // If already in YYYY-MM-DD format, use as is
+                  if (dayjs(endDate, 'YYYY-MM-DD', true).isValid()) {
+                    return endDate;
+                  }
+                  return '';
+                })()}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  // Format date as M/D/YYYY for backend compatibility
+                  const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
+                  setEndDate(formattedDate);
                   setPage(1);
                 }}
               />
