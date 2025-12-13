@@ -134,6 +134,9 @@ const DetailedSales = () => {
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
 
+  // Calculate total net price from current sales
+  const totalNetPrice = sales.reduce((sum, sale) => sum + (sale.NetTotal || 0), 0);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -390,6 +393,14 @@ const DetailedSales = () => {
               <div className="stat-title">Total Records</div>
               <div className="stat-value text-primary">{total}</div>
               <div className="stat-desc">Showing {sales.length} on this page</div>
+            </div>
+            <div className="stat">
+              <div className="stat-figure text-success">
+                <FaDollarSign className="text-3xl" />
+              </div>
+              <div className="stat-title">Total Net Price</div>
+              <div className="stat-value text-success">{formatCurrency(totalNetPrice)}</div>
+              <div className="stat-desc">From {sales.length} records on this page</div>
             </div>
           </div>
 
