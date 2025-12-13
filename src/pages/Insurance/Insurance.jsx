@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
-import { FaFileInvoice, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft } from 'react-icons/fa';
+import { FaShieldAlt, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 
-const url = "detailed-sales";
+const url = "detailed-sales/insurance";
 
 export const loader = async ({ request }) => {
   try {
@@ -25,7 +25,6 @@ export const loader = async ({ request }) => {
     if (params.get('invoiceDate')) queryParams.invoiceDate = params.get('invoiceDate');
     if (params.get('invoiceType')) queryParams.invoiceType = params.get('invoiceType');
     if (params.get('salesName')) queryParams.salesName = params.get('salesName');
-    if (params.get('customerName')) queryParams.customerName = params.get('customerName');
     if (params.get('materialNumber')) queryParams.materialNumber = params.get('materialNumber');
     if (params.get('search')) queryParams.search = params.get('search');
     if (params.get('limit')) queryParams.limit = params.get('limit');
@@ -39,9 +38,9 @@ export const loader = async ({ request }) => {
         count: response.data.count || 0,
       };
     }
-    throw new Error("Failed to fetch detailed sales");
+    throw new Error("Failed to fetch insurance sales");
   } catch (error) {
-    console.error("Error fetching detailed sales:", error);
+    console.error("Error fetching insurance sales:", error);
     
     // Handle 401 errors - redirect to login
     if (error.response?.status === 401 || error.status === 401) {
@@ -55,11 +54,11 @@ export const loader = async ({ request }) => {
       });
     }
     
-    throw new Error(error.response?.data?.message || error.message || "Failed to fetch detailed sales");
+    throw new Error(error.response?.data?.message || error.message || "Failed to fetch insurance sales");
   }
 };
 
-const DetailedSales = () => {
+const Insurance = () => {
   const { sales: initialSales, total: initialTotal } = useLoaderData();
   const [sales, setSales] = useState(initialSales);
   const [total, setTotal] = useState(initialTotal);
@@ -74,7 +73,6 @@ const DetailedSales = () => {
   const [invoiceDate, setInvoiceDate] = useState('');
   const [invoiceType, setInvoiceType] = useState('');
   const [salesName, setSalesName] = useState('');
-  const [customerName, setCustomerName] = useState('');
   const [materialNumber, setMaterialNumber] = useState('');
   const [search, setSearch] = useState('');
 
@@ -92,7 +90,6 @@ const DetailedSales = () => {
       if (invoiceDate) params.invoiceDate = invoiceDate;
       if (invoiceType) params.invoiceType = invoiceType;
       if (salesName) params.salesName = salesName;
-      if (customerName) params.customerName = customerName;
       if (materialNumber) params.materialNumber = materialNumber;
       if (search) params.search = search;
 
@@ -101,10 +98,10 @@ const DetailedSales = () => {
         setSales(res.data.data || []);
         setTotal(res.data.total || 0);
       } else {
-        setError(res.data?.message || 'Failed to load detailed sales');
+        setError(res.data?.message || 'Failed to load insurance sales');
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load detailed sales');
+      setError(err.response?.data?.message || err.message || 'Failed to load insurance sales');
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +109,7 @@ const DetailedSales = () => {
 
   useEffect(() => {
     fetchSales();
-  }, [page, branchCode, invoiceNumber, invoiceDate, invoiceType, salesName, customerName, materialNumber, search]);
+  }, [page, branchCode, invoiceNumber, invoiceDate, invoiceType, salesName, materialNumber, search]);
 
   const handleResetFilters = () => {
     setBranchCode('');
@@ -120,7 +117,6 @@ const DetailedSales = () => {
     setInvoiceDate('');
     setInvoiceType('');
     setSalesName('');
-    setCustomerName('');
     setMaterialNumber('');
     setSearch('');
     setPage(1);
@@ -139,14 +135,23 @@ const DetailedSales = () => {
       </div>
 
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <FaFileInvoice className="text-4xl text-primary" />
-          <h1 className="text-4xl font-bold text-primary">
-            Detailed Sales
-          </h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <FaShieldAlt className="text-4xl text-primary" />
+            <h1 className="text-4xl font-bold text-primary">
+              Insurance Sales
+            </h1>
+          </div>
+          <Link
+            to="/insurance/by-customer"
+            className="btn btn-primary gap-2"
+          >
+            <FaShieldAlt className="h-4 w-4" />
+            Insurance by Customer Name
+          </Link>
         </div>
         <p className="text-base-content/70">
-          View and filter all detailed sales records
+          View and filter sales records for insurance companies
         </p>
       </div>
 
@@ -180,7 +185,7 @@ const DetailedSales = () => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold flex items-center gap-2">
-                  <FaFileInvoice className="text-primary" />
+                  <FaDollarSign className="text-primary" />
                   Invoice Number
                 </span>
               </label>
@@ -256,22 +261,6 @@ const DetailedSales = () => {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">Customer Name</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered"
-                placeholder="Enter customer name"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
                 <span className="label-text font-semibold flex items-center gap-2">
                   <FaBox className="text-primary" />
                   Material Number
@@ -335,9 +324,9 @@ const DetailedSales = () => {
           <div className="stats shadow mb-8 w-full">
             <div className="stat">
               <div className="stat-figure text-primary">
-                <FaFileInvoice className="text-3xl" />
+                <FaShieldAlt className="text-3xl" />
               </div>
-              <div className="stat-title">Total Records</div>
+              <div className="stat-title">Total Insurance Records</div>
               <div className="stat-value text-primary">{total}</div>
               <div className="stat-desc">Showing {sales.length} on this page</div>
             </div>
@@ -355,7 +344,7 @@ const DetailedSales = () => {
                       <th>Date</th>
                       <th>Time</th>
                       <th>Type</th>
-                      <th>Customer</th>
+                      <th>Insurance Company</th>
                       <th>Sales Person</th>
                       <th>Product</th>
                       <th>Quantity</th>
@@ -382,7 +371,7 @@ const DetailedSales = () => {
                               {sale.InvoiceType}
                             </span>
                           </td>
-                          <td>{sale.CustomerName || 'N/A'}</td>
+                          <td className="font-semibold">{sale.CustomerName || 'N/A'}</td>
                           <td>{sale.SalesName}</td>
                           <td>
                             <div className="max-w-xs truncate" title={sale.Name}>
@@ -405,7 +394,7 @@ const DetailedSales = () => {
                     ) : (
                       <tr>
                         <td colSpan="12" className="text-center py-8">
-                          <p className="text-base-content/70">No detailed sales found</p>
+                          <p className="text-base-content/70">No insurance sales found</p>
                         </td>
                       </tr>
                     )}
@@ -445,5 +434,5 @@ const DetailedSales = () => {
   );
 };
 
-export default DetailedSales;
+export default Insurance;
 

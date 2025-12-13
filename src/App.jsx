@@ -11,15 +11,8 @@ import { HomeLayout, Error,
   EditUser,
   SingleUser,
   DetailedSalesPage,
-  DetailedSalesStatistics,
-  SalesByPharmacies,
-  SalesBySalesPerson,
-  SalesByInvoiceType,
-  CashPage,
-  CashPageStatistics,
   InsurancePage,
-  InsurancePageStatistics,
-  InsurancePageSalesByName,
+  InsuranceByCustomerPage,
   IncentiveItemsPage,
   ContestsPage,
   Landing
@@ -41,7 +34,8 @@ import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
-import { loader as detailedSalesStatisticsLoader } from "./pages/DetailedSales/DetailedSalesStatistics.jsx";
+import { loader as insuranceLoader } from "./pages/Insurance/Insurance.jsx";
+import { loader as insuranceByCustomerLoader } from "./pages/Insurance/InsuranceByCustomer.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
 import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 
@@ -152,77 +146,22 @@ const router = createBrowserRouter([{
       loader: detailedSalesLoader,
     },
     {
-      path: "detailed-sales/statistics",
-      element: (
-        <AdminRoute>
-          <DetailedSalesStatistics />
-        </AdminRoute>
-      ),
-      loader: detailedSalesStatisticsLoader,
-    },
-    {
-      path: "detailed-sales/statistics/sales-by-pharmacies",
-      element: (
-        <AdminRoute>
-          <SalesByPharmacies />
-        </AdminRoute>
-      ),
-    },
-    {
-      path: "detailed-sales/statistics/sales-by-sales-person",
-      element: (
-        <AdminRoute>
-          <SalesBySalesPerson />
-        </AdminRoute>
-      ),
-    },
-    {
-      path: "detailed-sales/statistics/sales-by-invoice-type",
-      element: (
-        <AdminRoute>
-          <SalesByInvoiceType />
-        </AdminRoute>
-      ),
-    },
-    {
-      path: "cash",
-      element: (
-        <AdminRoute>
-          <CashPage />
-        </AdminRoute>
-      ),
-    },
-    {
-      path: "cash/statistics",
-      element: (
-        <AdminRoute>
-          <CashPageStatistics />
-        </AdminRoute>
-      ),
-    },
-    {
       path: "insurance",
       element: (
         <AdminRoute>
           <InsurancePage />
         </AdminRoute>
       ),
+      loader: insuranceLoader,
     },
     {
-      path: "insurance/statistics",
+      path: "insurance/by-customer",
       element: (
         <AdminRoute>
-          <InsurancePageStatistics />
+          <InsuranceByCustomerPage />
         </AdminRoute>
       ),
-    },
-    {
-      path: "insurance/sales-by-name",
-      element: (
-        <AdminRoute>
-          <InsurancePageSalesByName />
-        </AdminRoute>
-      ),
+      loader: insuranceByCustomerLoader,
     },
     {
       path: "incentive-items",

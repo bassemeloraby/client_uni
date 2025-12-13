@@ -19,15 +19,10 @@ export { default as SingleUser } from "./Users/SingleUser";
 
 /** Detailed Sales */
 export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
-export { default as DetailedSalesStatistics } from "./DetailedSales/DetailedSalesStatistics";
-export { default as SalesByPharmacies } from "./DetailedSales/SalesByPharmacies";
-export { default as SalesBySalesPerson } from "./DetailedSales/SalesBySalesPerson";
-export { default as SalesByInvoiceType } from "./DetailedSales/SalesByInvoiceType";
-export { default as CashPage } from "./CashPage";
-export { default as CashPageStatistics } from "./CashPageStatistics";
-export { default as InsurancePage } from "./InsurancePage";
-export { default as InsurancePageStatistics } from "./InsurancePageStatistics";
-export { default as InsurancePageSalesByName } from "./InsurancePageSalesByName";
+
+/** Insurance */
+export { default as InsurancePage } from "./Insurance/Insurance";
+export { default as InsuranceByCustomerPage } from "./Insurance/InsuranceByCustomer";
 
 /** Incentive Items */
 export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";
