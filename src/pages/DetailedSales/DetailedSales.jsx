@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
-import { FaFileInvoice, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft } from 'react-icons/fa';
+import { FaFileInvoice, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft, FaChevronDown, FaChevronUp, FaCheck } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 import dayjs from 'dayjs';
 
@@ -70,7 +70,7 @@ const DetailedSales = () => {
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  // Filters
+  // Active filters (used for API calls)
   const [branchCode, setBranchCode] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -80,6 +80,20 @@ const DetailedSales = () => {
   const [customerName, setCustomerName] = useState('');
   const [materialNumber, setMaterialNumber] = useState('');
   const [search, setSearch] = useState('');
+
+  // Temporary filter values (for form inputs, not applied until "Apply Filters" is clicked)
+  const [tempBranchCode, setTempBranchCode] = useState('');
+  const [tempInvoiceNumber, setTempInvoiceNumber] = useState('');
+  const [tempStartDate, setTempStartDate] = useState('');
+  const [tempEndDate, setTempEndDate] = useState('');
+  const [tempInvoiceType, setTempInvoiceType] = useState('');
+  const [tempSalesName, setTempSalesName] = useState('');
+  const [tempCustomerName, setTempCustomerName] = useState('');
+  const [tempMaterialNumber, setTempMaterialNumber] = useState('');
+  const [tempSearch, setTempSearch] = useState('');
+
+  // Show/hide filters
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchSales = async () => {
     try {
@@ -118,7 +132,44 @@ const DetailedSales = () => {
     fetchSales();
   }, [page, branchCode, invoiceNumber, startDate, endDate, invoiceType, salesName, customerName, materialNumber, search]);
 
+  // Sync temp values with active values when component loads or filters are shown
+  useEffect(() => {
+    if (showFilters) {
+      setTempBranchCode(branchCode);
+      setTempInvoiceNumber(invoiceNumber);
+      setTempStartDate(startDate);
+      setTempEndDate(endDate);
+      setTempInvoiceType(invoiceType);
+      setTempSalesName(salesName);
+      setTempCustomerName(customerName);
+      setTempMaterialNumber(materialNumber);
+      setTempSearch(search);
+    }
+  }, [showFilters]);
+
+  const handleApplyFilters = () => {
+    setBranchCode(tempBranchCode);
+    setInvoiceNumber(tempInvoiceNumber);
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setInvoiceType(tempInvoiceType);
+    setSalesName(tempSalesName);
+    setCustomerName(tempCustomerName);
+    setMaterialNumber(tempMaterialNumber);
+    setSearch(tempSearch);
+    setPage(1);
+  };
+
   const handleResetFilters = () => {
+    setTempBranchCode('');
+    setTempInvoiceNumber('');
+    setTempStartDate('');
+    setTempEndDate('');
+    setTempInvoiceType('');
+    setTempSalesName('');
+    setTempCustomerName('');
+    setTempMaterialNumber('');
+    setTempSearch('');
     setBranchCode('');
     setInvoiceNumber('');
     setStartDate('');
@@ -161,11 +212,30 @@ const DetailedSales = () => {
       {/* Filters */}
       <div className="card bg-base-100 shadow-xl mb-8">
         <div className="card-body">
-          <h2 className="card-title mb-4">
-            <FaFilter className="text-primary" />
-            Filters
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="card-title">
+              <FaFilter className="text-primary" />
+              Filters
+            </h2>
+            <button
+              className="btn btn-ghost btn-sm gap-2"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? (
+                <>
+                  <FaChevronUp className="h-4 w-4" />
+                  Hide Filters
+                </>
+              ) : (
+                <>
+                  <FaChevronDown className="h-4 w-4" />
+                  Show Filters
+                </>
+              )}
+            </button>
+          </div>
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold flex items-center gap-2">
@@ -177,11 +247,8 @@ const DetailedSales = () => {
                 type="number"
                 className="input input-bordered"
                 placeholder="Enter branch code"
-                value={branchCode}
-                onChange={(e) => {
-                  setBranchCode(e.target.value);
-                  setPage(1);
-                }}
+                value={tempBranchCode}
+                onChange={(e) => setTempBranchCode(e.target.value)}
               />
             </div>
 
@@ -196,11 +263,8 @@ const DetailedSales = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Enter invoice number"
-                value={invoiceNumber}
-                onChange={(e) => {
-                  setInvoiceNumber(e.target.value);
-                  setPage(1);
-                }}
+                value={tempInvoiceNumber}
+                onChange={(e) => setTempInvoiceNumber(e.target.value)}
               />
             </div>
 
@@ -215,14 +279,14 @@ const DetailedSales = () => {
                 type="date"
                 className="input input-bordered"
                 value={(() => {
-                  if (!startDate) return '';
+                  if (!tempStartDate) return '';
                   // Try parsing as M/D/YYYY format first (backend format)
-                  if (dayjs(startDate, 'M/D/YYYY', true).isValid()) {
-                    return dayjs(startDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  if (dayjs(tempStartDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(tempStartDate, 'M/D/YYYY').format('YYYY-MM-DD');
                   }
                   // If already in YYYY-MM-DD format, use as is
-                  if (dayjs(startDate, 'YYYY-MM-DD', true).isValid()) {
-                    return startDate;
+                  if (dayjs(tempStartDate, 'YYYY-MM-DD', true).isValid()) {
+                    return tempStartDate;
                   }
                   return '';
                 })()}
@@ -230,8 +294,7 @@ const DetailedSales = () => {
                   const selectedDate = e.target.value;
                   // Format date as M/D/YYYY for backend compatibility
                   const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
-                  setStartDate(formattedDate);
-                  setPage(1);
+                  setTempStartDate(formattedDate);
                 }}
               />
             </div>
@@ -247,14 +310,14 @@ const DetailedSales = () => {
                 type="date"
                 className="input input-bordered"
                 value={(() => {
-                  if (!endDate) return '';
+                  if (!tempEndDate) return '';
                   // Try parsing as M/D/YYYY format first (backend format)
-                  if (dayjs(endDate, 'M/D/YYYY', true).isValid()) {
-                    return dayjs(endDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  if (dayjs(tempEndDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(tempEndDate, 'M/D/YYYY').format('YYYY-MM-DD');
                   }
                   // If already in YYYY-MM-DD format, use as is
-                  if (dayjs(endDate, 'YYYY-MM-DD', true).isValid()) {
-                    return endDate;
+                  if (dayjs(tempEndDate, 'YYYY-MM-DD', true).isValid()) {
+                    return tempEndDate;
                   }
                   return '';
                 })()}
@@ -262,8 +325,7 @@ const DetailedSales = () => {
                   const selectedDate = e.target.value;
                   // Format date as M/D/YYYY for backend compatibility
                   const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
-                  setEndDate(formattedDate);
-                  setPage(1);
+                  setTempEndDate(formattedDate);
                 }}
               />
             </div>
@@ -274,11 +336,8 @@ const DetailedSales = () => {
               </label>
               <select
                 className="select select-bordered"
-                value={invoiceType}
-                onChange={(e) => {
-                  setInvoiceType(e.target.value);
-                  setPage(1);
-                }}
+                value={tempInvoiceType}
+                onChange={(e) => setTempInvoiceType(e.target.value)}
               >
                 <option value="">All Types</option>
                 <option value="Normal">Normal</option>
@@ -299,11 +358,8 @@ const DetailedSales = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Enter sales person name"
-                value={salesName}
-                onChange={(e) => {
-                  setSalesName(e.target.value);
-                  setPage(1);
-                }}
+                value={tempSalesName}
+                onChange={(e) => setTempSalesName(e.target.value)}
               />
             </div>
 
@@ -315,11 +371,8 @@ const DetailedSales = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Enter customer name"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  setPage(1);
-                }}
+                value={tempCustomerName}
+                onChange={(e) => setTempCustomerName(e.target.value)}
               />
             </div>
 
@@ -334,11 +387,8 @@ const DetailedSales = () => {
                 type="number"
                 className="input input-bordered"
                 placeholder="Enter material number"
-                value={materialNumber}
-                onChange={(e) => {
-                  setMaterialNumber(e.target.value);
-                  setPage(1);
-                }}
+                value={tempMaterialNumber}
+                onChange={(e) => setTempMaterialNumber(e.target.value)}
               />
             </div>
 
@@ -353,20 +403,24 @@ const DetailedSales = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Search..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                value={tempSearch}
+                onChange={(e) => setTempSearch(e.target.value)}
               />
             </div>
           </div>
+          )}
 
-          <div className="mt-4">
-            <button className="btn btn-outline" onClick={handleResetFilters}>
-              Reset Filters
-            </button>
-          </div>
+          {showFilters && (
+            <div className="mt-4 flex gap-2">
+              <button className="btn btn-primary gap-2" onClick={handleApplyFilters}>
+                <FaCheck className="h-4 w-4" />
+                Apply Filters
+              </button>
+              <button className="btn btn-outline" onClick={handleResetFilters}>
+                Reset Filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
-import { FaShieldAlt, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft } from 'react-icons/fa';
+import { FaShieldAlt, FaStore, FaUser, FaCalendarAlt, FaBox, FaDollarSign, FaSearch, FaFilter, FaArrowLeft, FaChevronDown, FaChevronUp, FaCheck } from 'react-icons/fa';
 import { customFetch } from '../../utils';
 import dayjs from 'dayjs';
 
@@ -69,7 +69,7 @@ const Insurance = () => {
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  // Filters
+  // Active filters (used for API calls)
   const [branchCode, setBranchCode] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -78,6 +78,19 @@ const Insurance = () => {
   const [salesName, setSalesName] = useState('');
   const [materialNumber, setMaterialNumber] = useState('');
   const [search, setSearch] = useState('');
+
+  // Temporary filter values (for form inputs, not applied until "Apply Filters" is clicked)
+  const [tempBranchCode, setTempBranchCode] = useState('');
+  const [tempInvoiceNumber, setTempInvoiceNumber] = useState('');
+  const [tempStartDate, setTempStartDate] = useState('');
+  const [tempEndDate, setTempEndDate] = useState('');
+  const [tempInvoiceType, setTempInvoiceType] = useState('');
+  const [tempSalesName, setTempSalesName] = useState('');
+  const [tempMaterialNumber, setTempMaterialNumber] = useState('');
+  const [tempSearch, setTempSearch] = useState('');
+
+  // Show/hide filters
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchSales = async () => {
     try {
@@ -115,7 +128,41 @@ const Insurance = () => {
     fetchSales();
   }, [page, branchCode, invoiceNumber, startDate, endDate, invoiceType, salesName, materialNumber, search]);
 
+  const handleApplyFilters = () => {
+    setBranchCode(tempBranchCode);
+    setInvoiceNumber(tempInvoiceNumber);
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setInvoiceType(tempInvoiceType);
+    setSalesName(tempSalesName);
+    setMaterialNumber(tempMaterialNumber);
+    setSearch(tempSearch);
+    setPage(1);
+  };
+
+  // Sync temp values with active values when filters are shown
+  useEffect(() => {
+    if (showFilters) {
+      setTempBranchCode(branchCode);
+      setTempInvoiceNumber(invoiceNumber);
+      setTempStartDate(startDate);
+      setTempEndDate(endDate);
+      setTempInvoiceType(invoiceType);
+      setTempSalesName(salesName);
+      setTempMaterialNumber(materialNumber);
+      setTempSearch(search);
+    }
+  }, [showFilters]);
+
   const handleResetFilters = () => {
+    setTempBranchCode('');
+    setTempInvoiceNumber('');
+    setTempStartDate('');
+    setTempEndDate('');
+    setTempInvoiceType('');
+    setTempSalesName('');
+    setTempMaterialNumber('');
+    setTempSearch('');
     setBranchCode('');
     setInvoiceNumber('');
     setStartDate('');
@@ -182,11 +229,8 @@ const Insurance = () => {
                 type="number"
                 className="input input-bordered"
                 placeholder="Enter branch code"
-                value={branchCode}
-                onChange={(e) => {
-                  setBranchCode(e.target.value);
-                  setPage(1);
-                }}
+                value={tempBranchCode}
+                onChange={(e) => setTempBranchCode(e.target.value)}
               />
             </div>
 
@@ -201,11 +245,8 @@ const Insurance = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Enter invoice number"
-                value={invoiceNumber}
-                onChange={(e) => {
-                  setInvoiceNumber(e.target.value);
-                  setPage(1);
-                }}
+                value={tempInvoiceNumber}
+                onChange={(e) => setTempInvoiceNumber(e.target.value)}
               />
             </div>
 
@@ -220,14 +261,14 @@ const Insurance = () => {
                 type="date"
                 className="input input-bordered"
                 value={(() => {
-                  if (!startDate) return '';
+                  if (!tempStartDate) return '';
                   // Try parsing as M/D/YYYY format first (backend format)
-                  if (dayjs(startDate, 'M/D/YYYY', true).isValid()) {
-                    return dayjs(startDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  if (dayjs(tempStartDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(tempStartDate, 'M/D/YYYY').format('YYYY-MM-DD');
                   }
                   // If already in YYYY-MM-DD format, use as is
-                  if (dayjs(startDate, 'YYYY-MM-DD', true).isValid()) {
-                    return startDate;
+                  if (dayjs(tempStartDate, 'YYYY-MM-DD', true).isValid()) {
+                    return tempStartDate;
                   }
                   return '';
                 })()}
@@ -235,8 +276,7 @@ const Insurance = () => {
                   const selectedDate = e.target.value;
                   // Format date as M/D/YYYY for backend compatibility
                   const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
-                  setStartDate(formattedDate);
-                  setPage(1);
+                  setTempStartDate(formattedDate);
                 }}
               />
             </div>
@@ -252,14 +292,14 @@ const Insurance = () => {
                 type="date"
                 className="input input-bordered"
                 value={(() => {
-                  if (!endDate) return '';
+                  if (!tempEndDate) return '';
                   // Try parsing as M/D/YYYY format first (backend format)
-                  if (dayjs(endDate, 'M/D/YYYY', true).isValid()) {
-                    return dayjs(endDate, 'M/D/YYYY').format('YYYY-MM-DD');
+                  if (dayjs(tempEndDate, 'M/D/YYYY', true).isValid()) {
+                    return dayjs(tempEndDate, 'M/D/YYYY').format('YYYY-MM-DD');
                   }
                   // If already in YYYY-MM-DD format, use as is
-                  if (dayjs(endDate, 'YYYY-MM-DD', true).isValid()) {
-                    return endDate;
+                  if (dayjs(tempEndDate, 'YYYY-MM-DD', true).isValid()) {
+                    return tempEndDate;
                   }
                   return '';
                 })()}
@@ -267,8 +307,7 @@ const Insurance = () => {
                   const selectedDate = e.target.value;
                   // Format date as M/D/YYYY for backend compatibility
                   const formattedDate = selectedDate ? dayjs(selectedDate).format('M/D/YYYY') : '';
-                  setEndDate(formattedDate);
-                  setPage(1);
+                  setTempEndDate(formattedDate);
                 }}
               />
             </div>
@@ -279,11 +318,8 @@ const Insurance = () => {
               </label>
               <select
                 className="select select-bordered"
-                value={invoiceType}
-                onChange={(e) => {
-                  setInvoiceType(e.target.value);
-                  setPage(1);
-                }}
+                value={tempInvoiceType}
+                onChange={(e) => setTempInvoiceType(e.target.value)}
               >
                 <option value="">All Types</option>
                 <option value="Normal">Normal</option>
@@ -304,11 +340,8 @@ const Insurance = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Enter sales person name"
-                value={salesName}
-                onChange={(e) => {
-                  setSalesName(e.target.value);
-                  setPage(1);
-                }}
+                value={tempSalesName}
+                onChange={(e) => setTempSalesName(e.target.value)}
               />
             </div>
 
@@ -323,11 +356,8 @@ const Insurance = () => {
                 type="number"
                 className="input input-bordered"
                 placeholder="Enter material number"
-                value={materialNumber}
-                onChange={(e) => {
-                  setMaterialNumber(e.target.value);
-                  setPage(1);
-                }}
+                value={tempMaterialNumber}
+                onChange={(e) => setTempMaterialNumber(e.target.value)}
               />
             </div>
 
@@ -342,20 +372,24 @@ const Insurance = () => {
                 type="text"
                 className="input input-bordered"
                 placeholder="Search..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                value={tempSearch}
+                onChange={(e) => setTempSearch(e.target.value)}
               />
             </div>
           </div>
+          )}
 
-          <div className="mt-4">
-            <button className="btn btn-outline" onClick={handleResetFilters}>
-              Reset Filters
-            </button>
-          </div>
+          {showFilters && (
+            <div className="mt-4 flex gap-2">
+              <button className="btn btn-primary gap-2" onClick={handleApplyFilters}>
+                <FaCheck className="h-4 w-4" />
+                Apply Filters
+              </button>
+              <button className="btn btn-outline" onClick={handleResetFilters}>
+                Reset Filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
