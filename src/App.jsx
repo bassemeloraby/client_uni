@@ -13,6 +13,8 @@ import { HomeLayout, Error,
   IncentiveItemsPage,
   ContestsPage,
   HeaderSalesPage,
+  SalesByMonthPage,
+  CashSalesPage,
   Landing
 } from "./pages";
 
@@ -34,6 +36,8 @@ import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
 import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 import { loader as headerSalesLoader } from "./pages/HeaderSales/HeaderSales.jsx";
+import { loader as salesByMonthLoader } from "./pages/HeaderSales/SalesByMonth.jsx";
+import { loader as cashSalesLoader } from "./pages/HeaderSales/CashSales.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -158,6 +162,24 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: headerSalesLoader,
+    },
+    {
+      path: "header-sales/by-month",
+      element: (
+        <AdminRoute>
+          <SalesByMonthPage />
+        </AdminRoute>
+      ),
+      loader: salesByMonthLoader,
+    },
+    {
+      path: "cash-sales",
+      element: (
+        <AdminRoute>
+          <CashSalesPage />
+        </AdminRoute>
+      ),
+      loader: cashSalesLoader,
     },
   ],
 },

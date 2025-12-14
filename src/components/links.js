@@ -21,6 +21,8 @@ export const mainPages = [
       { id: nanoid(), linkName: "Incentive Items", link: "/incentive-items" },
       { id: nanoid(), linkName: "Contests", link: "/contests" },
       { id: nanoid(), linkName: "Header Sales", link: "/header-sales" },
+      { id: nanoid(), linkName: "Sales by Month", link: "/header-sales/by-month" },
+      { id: nanoid(), linkName: "Cash Sales", link: "/cash-sales" },
     ],
   },  
  {

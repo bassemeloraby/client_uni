@@ -25,3 +25,5 @@ export { default as ContestsPage } from "./Contests/Contests";
 
 /** Header Sales */
 export { default as HeaderSalesPage } from "./HeaderSales/HeaderSales";
+export { default as SalesByMonthPage } from "./HeaderSales/SalesByMonth";
+export { default as CashSalesPage } from "./HeaderSales/CashSales";
