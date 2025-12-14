@@ -22,3 +22,6 @@ export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";
 
 /** Contests */
 export { default as ContestsPage } from "./Contests/Contests";
+
+/** Header Sales */
+export { default as HeaderSalesPage } from "./HeaderSales/HeaderSales";

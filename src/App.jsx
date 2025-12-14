@@ -12,6 +12,7 @@ import { HomeLayout, Error,
   SingleUser,
   IncentiveItemsPage,
   ContestsPage,
+  HeaderSalesPage,
   Landing
 } from "./pages";
 
@@ -32,6 +33,7 @@ import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
 import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
+import { loader as headerSalesLoader } from "./pages/HeaderSales/HeaderSales.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -147,6 +149,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: contestsLoader,
+    },
+    {
+      path: "header-sales",
+      element: (
+        <AdminRoute>
+          <HeaderSalesPage />
+        </AdminRoute>
+      ),
+      loader: headerSalesLoader,
     },
   ],
 },
