@@ -8,6 +8,7 @@ import {
   FaRedo,
   FaFileInvoice
 } from 'react-icons/fa';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { customFetch } from "../../utils";
 
 const url = "header-sales/by-month";
@@ -132,6 +133,50 @@ const SalesByMonth = () => {
     return monthOrder.indexOf(a.Month) - monthOrder.indexOf(b.Month);
   });
 
+  // Color palette for the chart
+  const colorPalette = [
+    '#3b82f6', // blue
+    '#10b981', // green
+    '#f59e0b', // amber
+    '#ef4444', // red
+    '#8b5cf6', // purple
+    '#ec4899', // pink
+    '#06b6d4', // cyan
+    '#84cc16', // lime
+    '#f97316', // orange
+    '#6366f1', // indigo
+    '#14b8a6', // teal
+    '#a855f7', // violet
+  ];
+
+  // Prepare chart data with colors
+  const chartData = sortedSales.map((item, index) => ({
+    month: `${item.Month} ${item.Year}`,
+    monthAbbr: item.Month,
+    amount: item.TotalAmountAfterDiscount || 0,
+    count: item.count || 0,
+    color: colorPalette[index % colorPalette.length]
+  }));
+
+  // Custom tooltip for the chart
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-base-200 p-4 rounded-lg shadow-lg border border-base-300">
+          <p className="font-semibold text-base-content">{payload[0].payload.month}</p>
+          <p className="text-success">
+            <FaDollarSign className="inline mr-1" />
+            Amount: {formatCurrency(payload[0].value)}
+          </p>
+          <p className="text-info text-sm mt-1">
+            Invoices: {payload[0].payload.count}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -229,6 +274,53 @@ const SalesByMonth = () => {
             <div className="stat-title">Total Invoices</div>
             <div className="stat-value text-info">{totalCount}</div>
             <div className="stat-desc">Number of invoices</div>
+          </div>
+        </div>
+      )}
+
+      {/* Column Chart */}
+      {chartData.length > 0 && (
+        <div className="card bg-base-100 shadow-lg mb-6">
+          <div className="card-body">
+            <h2 className="card-title text-2xl mb-4">
+              <FaChartBar className="text-primary" />
+              Sales by Month - Column Chart
+            </h2>
+            <div className="w-full" style={{ height: '400px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="month" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    formatter={(value) => <span className="text-base-content">Total Amount</span>}
+                  />
+                  <Bar 
+                    dataKey="amount" 
+                    radius={[8, 8, 0, 0]}
+                    name="Total Amount"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
