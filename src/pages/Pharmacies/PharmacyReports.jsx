@@ -14,30 +14,13 @@ export const loader = async ({ params }) => {
     
     const pharmacy = pharmacyResponse.data.data;
     
-    // Check if there is any data for this pharmacy's branch code
-    try {
-      const salesResponse = await customFetch.get(`detailed-sales?branchCode=${pharmacy.branchCode}&limit=1`);
-      const hasData = salesResponse.data.success && 
-                      salesResponse.data.data && 
-                      salesResponse.data.data.length > 0;
-      
-      return {
-        pharmacy,
-        hasPermission: true,
-        permissionError: null,
-        permissionReason: null,
-        hasData,
-      };
-    } catch (salesError) {
-      // If error fetching sales, assume no data
-      return {
-        pharmacy,
-        hasPermission: true,
-        permissionError: null,
-        permissionReason: null,
-        hasData: false,
-      };
-    }
+    return {
+      pharmacy,
+      hasPermission: true,
+      permissionError: null,
+      permissionReason: null,
+      hasData: false,
+    };
   } catch (error) {
     console.error('Error fetching pharmacy reports:', error);
     
@@ -187,14 +170,14 @@ const PharmacyReports = () => {
           
           <div className="divider"></div>
           
-          <div className="flex flex-col gap-4">
-            <Link
-              to={`/detailed-sales?branchCode=${pharmacy.branchCode}`}
-              className="btn btn-primary btn-lg gap-2"
-            >
-              <FaFileInvoice className="h-5 w-5" />
-              View Detailed Sales for Branch {pharmacy.branchCode}
-            </Link>
+          <div className="alert alert-info">
+            <FaFileInvoice className="h-5 w-5" />
+            <div>
+              <h3 className="font-bold">Reports Available</h3>
+              <div className="text-sm mt-2">
+                Pharmacy reports and analytics will be available here.
+              </div>
+            </div>
           </div>
         </div>
       </div>

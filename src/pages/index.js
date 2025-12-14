@@ -17,13 +17,6 @@ export { default as CreateUser } from "./Users/CreateUser";
 export { default as EditUser } from "./Users/EditUser";
 export { default as SingleUser } from "./Users/SingleUser";
 
-/** Detailed Sales */
-export { default as DetailedSalesPage } from "./DetailedSales/DetailedSales";
-
-/** Insurance */
-export { default as InsurancePage } from "./Insurance/Insurance";
-export { default as InsuranceByCustomerPage } from "./Insurance/InsuranceByCustomer";
-
 /** Incentive Items */
 export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";
 

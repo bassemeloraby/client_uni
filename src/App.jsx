@@ -10,9 +10,6 @@ import { HomeLayout, Error,
   CreateUser,
   EditUser,
   SingleUser,
-  DetailedSalesPage,
-  InsurancePage,
-  InsuranceByCustomerPage,
   IncentiveItemsPage,
   ContestsPage,
   Landing
@@ -33,9 +30,6 @@ import { loader as pharmacyAssignmentsLoader } from "./pages/Pharmacies/Pharmacy
 import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
-import { loader as detailedSalesLoader } from "./pages/DetailedSales/DetailedSales.jsx";
-import { loader as insuranceLoader } from "./pages/Insurance/Insurance.jsx";
-import { loader as insuranceByCustomerLoader } from "./pages/Insurance/InsuranceByCustomer.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
 import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 
@@ -135,33 +129,6 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: singleUserLoader,
-    },
-    {
-      path: "detailed-sales",
-      element: (
-        <AdminRoute>
-          <DetailedSalesPage />
-        </AdminRoute>
-      ),
-      loader: detailedSalesLoader,
-    },
-    {
-      path: "insurance",
-      element: (
-        <AdminRoute>
-          <InsurancePage />
-        </AdminRoute>
-      ),
-      loader: insuranceLoader,
-    },
-    {
-      path: "insurance/by-customer",
-      element: (
-        <AdminRoute>
-          <InsuranceByCustomerPage />
-        </AdminRoute>
-      ),
-      loader: insuranceByCustomerLoader,
     },
     {
       path: "incentive-items",
