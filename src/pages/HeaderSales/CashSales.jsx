@@ -82,8 +82,8 @@ const CashSales = () => {
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount || 0);
   };
 
@@ -124,7 +124,7 @@ const CashSales = () => {
 
   // Use grand totals from backend
   const totals = grandTotals || {};
-  const grandTotal = totals.Total || 0;
+  const grandTotal = Math.round(totals.Total || 0);
 
   // Month order for sorting
   const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -155,7 +155,7 @@ const CashSales = () => {
   const chartData = sortedSales.map((item, index) => ({
     month: `${item.Month} ${item.Year}`,
     monthAbbr: item.Month,
-    amount: item.Total || 0,
+    amount: Math.round(item.Total || 0),
     year: item.Year,
     color: colorPalette[index % colorPalette.length]
   }));
@@ -352,7 +352,7 @@ const CashSales = () => {
                   <td className="font-bold text-lg">
                     <div className="flex items-center gap-1">
                       <FaDollarSign className="text-success" />
-                      <span className="text-success">{formatCurrency(item.Total || 0)}</span>
+                      <span className="text-success">{formatCurrency(Math.round(item.Total || 0))}</span>
                     </div>
                   </td>
                 </tr>

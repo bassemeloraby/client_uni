@@ -80,8 +80,8 @@ const SalesByMonth = () => {
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount || 0);
   };
 
@@ -121,7 +121,7 @@ const SalesByMonth = () => {
   };
 
   // Calculate total
-  const totalAmount = salesByMonth.reduce((sum, item) => sum + (item.TotalAmountAfterDiscount || 0), 0);
+  const totalAmount = Math.round(salesByMonth.reduce((sum, item) => sum + (item.TotalAmountAfterDiscount || 0), 0));
   const totalCount = salesByMonth.reduce((sum, item) => sum + (item.count || 0), 0);
 
   // Month order for sorting
@@ -153,7 +153,7 @@ const SalesByMonth = () => {
   const chartData = sortedSales.map((item, index) => ({
     month: `${item.Month} ${item.Year}`,
     monthAbbr: item.Month,
-    amount: item.TotalAmountAfterDiscount || 0,
+    amount: Math.round(item.TotalAmountAfterDiscount || 0),
     count: item.count || 0,
     color: colorPalette[index % colorPalette.length]
   }));
@@ -361,7 +361,7 @@ const SalesByMonth = () => {
                     <div className="flex items-center gap-2">
                       <FaDollarSign className="text-success text-lg" />
                       <span className="font-bold text-lg text-success">
-                        {formatCurrency(item.TotalAmountAfterDiscount)}
+                        {formatCurrency(Math.round(item.TotalAmountAfterDiscount || 0))}
                       </span>
                     </div>
                   </td>
