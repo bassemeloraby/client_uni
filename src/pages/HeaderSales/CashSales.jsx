@@ -6,13 +6,7 @@ import {
   FaChartBar,
   FaDownload,
   FaRedo,
-  FaFileInvoice,
-  FaCashRegister,
-  FaCreditCard,
-  FaShoppingCart,
-  FaGlobe,
-  FaUndo,
-  FaStore
+  FaFileInvoice
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -38,6 +32,7 @@ export const loader = async ({ request }) => {
     if (response.data.success) {
       return {
         salesByMonth: response.data.data || [],
+        grandTotals: response.data.grandTotals || {},
         availableYears: response.data.availableYears || [],
         selectedYear: response.data.selectedYear,
       };
@@ -60,6 +55,7 @@ export const loader = async ({ request }) => {
     
     return {
       salesByMonth: [],
+      grandTotals: {},
       availableYears: [],
       selectedYear: null,
       error: error.response?.data?.message || error.message || "Failed to fetch cash sales by month",
@@ -68,7 +64,7 @@ export const loader = async ({ request }) => {
 };
 
 const CashSales = () => {
-  const { salesByMonth, availableYears, selectedYear, error } = useLoaderData();
+  const { salesByMonth, grandTotals, availableYears, selectedYear, error } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -125,36 +121,9 @@ const CashSales = () => {
     navigate('/cash-sales');
   };
 
-  // Calculate totals
-  const calculateTotals = () => {
-    return salesByMonth.reduce((acc, item) => {
-      acc.CashCustomer += item.CashCustomer || 0;
-      acc.CreditCustomer += item.CreditCustomer || 0;
-      acc.Normal += item.Normal || 0;
-      acc.Online += item.Online || 0;
-      acc.Return += item.Return || 0;
-      acc.ReturnCashCustomer += item.ReturnCashCustomer || 0;
-      acc.ReturnCreditCustomer += item.ReturnCreditCustomer || 0;
-      acc.ReturnOnline += item.ReturnOnline || 0;
-      acc.totalCount += item.totalCount || 0;
-      return acc;
-    }, {
-      CashCustomer: 0,
-      CreditCustomer: 0,
-      Normal: 0,
-      Online: 0,
-      Return: 0,
-      ReturnCashCustomer: 0,
-      ReturnCreditCustomer: 0,
-      ReturnOnline: 0,
-      totalCount: 0
-    });
-  };
-
-  const totals = calculateTotals();
-  const grandTotal = totals.CashCustomer + totals.CreditCustomer + totals.Normal + 
-                     totals.Online + totals.Return + totals.ReturnCashCustomer + 
-                     totals.ReturnCreditCustomer + totals.ReturnOnline;
+  // Use grand totals from backend
+  const totals = grandTotals || {};
+  const grandTotal = totals.Total || 0;
 
   // Month order for sorting
   const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -274,121 +243,35 @@ const CashSales = () => {
               <tr>
                 <th>Year</th>
                 <th>Month</th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaCashRegister className="text-primary" />
-                    Cash Customer
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaCreditCard className="text-info" />
-                    Credit Customer
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaStore className="text-success" />
-                    Normal
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaGlobe className="text-warning" />
-                    Online
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaUndo className="text-error" />
-                    Return
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaUndo className="text-error" />
-                    Return Cash
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaUndo className="text-error" />
-                    Return Credit
-                  </div>
-                </th>
-                <th>
-                  <div className="flex items-center gap-2">
-                    <FaUndo className="text-error" />
-                    Return Online
-                  </div>
-                </th>
                 <th>Total</th>
               </tr>
             </thead>
             <tbody>
-              {sortedSales.map((item, index) => {
-                const monthTotal = (item.CashCustomer || 0) + (item.CreditCustomer || 0) + 
-                                  (item.Normal || 0) + (item.Online || 0) + (item.Return || 0) + 
-                                  (item.ReturnCashCustomer || 0) + (item.ReturnCreditCustomer || 0) + 
-                                  (item.ReturnOnline || 0);
-                return (
-                  <tr key={`${item.Year}-${item.Month}-${index}`} className="hover">
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <FaCalendarAlt className="text-primary" />
-                        <span className="font-semibold">{item.Year || '-'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="badge badge-primary badge-lg">
-                        {getMonthName(item.Month)} ({item.Month})
-                      </div>
-                    </td>
-                    <td className="text-success font-semibold">
-                      {formatCurrency(item.CashCustomer || 0)}
-                    </td>
-                    <td className="text-info font-semibold">
-                      {formatCurrency(item.CreditCustomer || 0)}
-                    </td>
-                    <td className="text-success font-semibold">
-                      {formatCurrency(item.Normal || 0)}
-                    </td>
-                    <td className="text-warning font-semibold">
-                      {formatCurrency(item.Online || 0)}
-                    </td>
-                    <td className="text-error font-semibold">
-                      {formatCurrency(item.Return || 0)}
-                    </td>
-                    <td className="text-error font-semibold">
-                      {formatCurrency(item.ReturnCashCustomer || 0)}
-                    </td>
-                    <td className="text-error font-semibold">
-                      {formatCurrency(item.ReturnCreditCustomer || 0)}
-                    </td>
-                    <td className="text-error font-semibold">
-                      {formatCurrency(item.ReturnOnline || 0)}
-                    </td>
-                    <td className="font-bold text-lg">
-                      <div className="flex items-center gap-1">
-                        <FaDollarSign className="text-success" />
-                        <span className="text-success">{formatCurrency(monthTotal)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {sortedSales.map((item, index) => (
+                <tr key={`${item.Year}-${item.Month}-${index}`} className="hover">
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <FaCalendarAlt className="text-primary" />
+                      <span className="font-semibold">{item.Year || '-'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="badge badge-primary badge-lg">
+                      {getMonthName(item.Month)} ({item.Month})
+                    </div>
+                  </td>
+                  <td className="font-bold text-lg">
+                    <div className="flex items-center gap-1">
+                      <FaDollarSign className="text-success" />
+                      <span className="text-success">{formatCurrency(item.Total || 0)}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
             <tfoot>
               <tr>
-                <th colSpan="2" className="text-right">Total:</th>
-                <th className="text-success">{formatCurrency(totals.CashCustomer)}</th>
-                <th className="text-info">{formatCurrency(totals.CreditCustomer)}</th>
-                <th className="text-success">{formatCurrency(totals.Normal)}</th>
-                <th className="text-warning">{formatCurrency(totals.Online)}</th>
-                <th className="text-error">{formatCurrency(totals.Return)}</th>
-                <th className="text-error">{formatCurrency(totals.ReturnCashCustomer)}</th>
-                <th className="text-error">{formatCurrency(totals.ReturnCreditCustomer)}</th>
-                <th className="text-error">{formatCurrency(totals.ReturnOnline)}</th>
+                <th colSpan="2" className="text-right">Grand Total:</th>
                 <th className="text-success text-lg">
                   {formatCurrency(grandTotal)}
                 </th>
