@@ -15,6 +15,7 @@ import { HomeLayout, Error,
   HeaderSalesPage,
   SalesByMonthPage,
   CashSalesPage,
+  InsurancePage,
   Landing
 } from "./pages";
 
@@ -38,6 +39,7 @@ import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 import { loader as headerSalesLoader } from "./pages/HeaderSales/HeaderSales.jsx";
 import { loader as salesByMonthLoader } from "./pages/HeaderSales/SalesByMonth.jsx";
 import { loader as cashSalesLoader } from "./pages/HeaderSales/CashSales.jsx";
+import { loader as insuranceLoader } from "./pages/HeaderSales/Insurance.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -180,6 +182,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: cashSalesLoader,
+    },
+    {
+      path: "insurance",
+      element: (
+        <AdminRoute>
+          <InsurancePage />
+        </AdminRoute>
+      ),
+      loader: insuranceLoader,
     },
   ],
 },
