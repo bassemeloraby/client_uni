@@ -8,6 +8,14 @@ export const mainPages = [
   },
   {
     id: nanoid(),
+    text: "Special items",
+    ping: [
+      { id: nanoid(), linkName: "Incentive", link: "/incentive-items" },
+      { id: nanoid(), linkName: "Contest", link: "/contests" },
+    ],
+  },
+  {
+    id: nanoid(),
     text: "Pharmacies",
     ping: [
       { id: nanoid(), linkName: "Pharmacies", link: "/pharmacies" },
@@ -18,8 +26,6 @@ export const mainPages = [
     id: nanoid(),
     text: "Sales",
     ping: [
-      { id: nanoid(), linkName: "Incentive Items", link: "/incentive-items" },
-      { id: nanoid(), linkName: "Contests", link: "/contests" },
       { id: nanoid(), linkName: "Header Sales", link: "/header-sales" },
       { id: nanoid(), linkName: "Sales by Month", link: "/header-sales/by-month" },
       { id: nanoid(), linkName: "Cash Sales", link: "/cash-sales" },

@@ -2,8 +2,8 @@
 import axios from "axios";
 
 // Use the production URL for the deployed application
-const productionUrl = "https://server-uni.vercel.app/api/";
-// const productionUrl = "http://localhost:5000/api/";
+// const productionUrl = "https://server-uni.vercel.app/api/";
+const productionUrl = "http://localhost:5000/api/";
 
 export const customFetch = axios.create({
   baseURL: productionUrl,
