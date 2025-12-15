@@ -16,6 +16,7 @@ import { HomeLayout, Error,
   SalesByMonthPage,
   CashSalesPage,
   InsurancePage,
+  WasfatyPage,
   Landing
 } from "./pages";
 
@@ -40,6 +41,7 @@ import { loader as headerSalesLoader } from "./pages/HeaderSales/HeaderSales.jsx
 import { loader as salesByMonthLoader } from "./pages/HeaderSales/SalesByMonth.jsx";
 import { loader as cashSalesLoader } from "./pages/HeaderSales/CashSales.jsx";
 import { loader as insuranceLoader } from "./pages/HeaderSales/Insurance.jsx";
+import { loader as wasfatyLoader } from "./pages/HeaderSales/Wasfaty.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -191,6 +193,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: insuranceLoader,
+    },
+    {
+      path: "wasfaty",
+      element: (
+        <AdminRoute>
+          <WasfatyPage />
+        </AdminRoute>
+      ),
+      loader: wasfatyLoader,
     },
   ],
 },

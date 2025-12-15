@@ -30,6 +30,7 @@ export const mainPages = [
       { id: nanoid(), linkName: "Sales by Month", link: "/header-sales/by-month" },
       { id: nanoid(), linkName: "Cash Sales", link: "/cash-sales" },
       { id: nanoid(), linkName: "Insurance", link: "/insurance" },
+      { id: nanoid(), linkName: "Wasfaty", link: "/wasfaty" },
     ],
   },  
  {

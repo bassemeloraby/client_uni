@@ -28,3 +28,4 @@ export { default as HeaderSalesPage } from "./HeaderSales/HeaderSales";
 export { default as SalesByMonthPage } from "./HeaderSales/SalesByMonth";
 export { default as CashSalesPage } from "./HeaderSales/CashSales";
 export { default as InsurancePage } from "./HeaderSales/Insurance";
+export { default as WasfatyPage } from "./HeaderSales/Wasfaty";
