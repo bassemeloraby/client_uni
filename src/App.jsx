@@ -1,4 +1,6 @@
-import { HomeLayout, Error,
+import {
+  HomeLayout,
+  Error,
   Login,
   PharmaciesPage,
   CreatePharmacy,
@@ -17,7 +19,8 @@ import { HomeLayout, Error,
   CashSalesPage,
   InsurancePage,
   WasfatyPage,
-  Landing
+  OnlinePage,
+  Landing,
 } from "./pages";
 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
@@ -42,6 +45,7 @@ import { loader as salesByMonthLoader } from "./pages/HeaderSales/SalesByMonth.j
 import { loader as cashSalesLoader } from "./pages/HeaderSales/CashSales.jsx";
 import { loader as insuranceLoader } from "./pages/HeaderSales/Insurance.jsx";
 import { loader as wasfatyLoader } from "./pages/HeaderSales/Wasfaty.jsx";
+import { loader as onlineLoader } from "./pages/HeaderSales/Online.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -202,6 +206,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: wasfatyLoader,
+    },
+    {
+      path: "online",
+      element: (
+        <AdminRoute>
+          <OnlinePage />
+        </AdminRoute>
+      ),
+      loader: onlineLoader,
     },
   ],
 },
