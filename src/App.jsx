@@ -13,6 +13,7 @@ import {
   EditUser,
   SingleUser,
   IncentiveItemsPage,
+  InsuranceItemsPage,
   ContestsPage,
   HeaderSalesPage,
   SalesByMonthPage,
@@ -39,6 +40,7 @@ import { loader as usersLoader } from "./pages/Users/Users.jsx";
 import { loader as singleUserLoader } from "./pages/Users/SingleUser.jsx";
 import { loader as editUserLoader } from "./pages/Users/EditUser.jsx";
 import { loader as incentiveItemsLoader } from "./pages/IncentiveItems/IncentiveItems.jsx";
+import { loader as insuranceItemsLoader } from "./pages/InsuranceItems/InsuranceItems.jsx";
 import { loader as contestsLoader } from "./pages/Contests/Contests.jsx";
 import { loader as headerSalesLoader } from "./pages/HeaderSales/HeaderSales.jsx";
 import { loader as salesByMonthLoader } from "./pages/HeaderSales/SalesByMonth.jsx";
@@ -152,6 +154,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: incentiveItemsLoader,
+    },
+    {
+      path: "insurance-items",
+      element: (
+        <AdminRoute>
+          <InsuranceItemsPage />
+        </AdminRoute>
+      ),
+      loader: insuranceItemsLoader,
     },
     {
       path: "contests",

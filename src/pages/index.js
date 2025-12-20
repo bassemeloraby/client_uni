@@ -20,6 +20,9 @@ export { default as SingleUser } from "./Users/SingleUser";
 /** Incentive Items */
 export { default as IncentiveItemsPage } from "./IncentiveItems/IncentiveItems";
 
+/** Insurance Items */
+export { default as InsuranceItemsPage } from "./InsuranceItems/InsuranceItems";
+
 /** Contests */
 export { default as ContestsPage } from "./Contests/Contests";
 
