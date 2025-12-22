@@ -759,7 +759,7 @@ const IncentiveItems = () => {
                   </td>
                   <td>
                     <div className="font-semibold text-success">
-                      {formatCurrency(item['incentive value'] || 0)}
+                      {formatCurrency(item.incentive_value || 0)}
                     </div>
                   </td>
                 </tr>
@@ -773,7 +773,7 @@ const IncentiveItems = () => {
                 </th>
                 <th></th>
                 <th className="text-success">
-                  {formatCurrency(items.reduce((sum, item) => sum + (item['incentive value'] || 0), 0))}
+                  {formatCurrency(items.reduce((sum, item) => sum + (item.incentive_value || 0), 0))}
                 </th>
               </tr>
             </tfoot>
