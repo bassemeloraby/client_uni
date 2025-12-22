@@ -40,7 +40,9 @@ export const loader = async ({ request }) => {
     // Build query string from URL params
     if (params.get('Class')) queryParams.Class = params.get('Class');
     if (params.get('Category')) queryParams.Category = params.get('Category');
-    if (params.get('Sub category')) queryParams['Sub category'] = params.get('Sub category');
+    // Backend expects 'Sub category' with space in query string
+    const subCategory = params.get('Sub_category') || params.get('Sub category');
+    if (subCategory) queryParams['Sub category'] = subCategory;
     if (params.get('Division')) queryParams.Division = params.get('Division');
     if (params.get('search')) queryParams.search = params.get('search');
     if (params.get('description')) queryParams.description = params.get('description');
@@ -110,7 +112,7 @@ const IncentiveItems = () => {
   const [filters, setFilters] = useState({
     Class: searchParams.get('Class') || '',
     Category: searchParams.get('Category') || '',
-    'Sub category': searchParams.get('Sub category') || '',
+    Sub_category: searchParams.get('Sub_category') || '',
     Division: searchParams.get('Division') || '',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
@@ -124,13 +126,13 @@ const IncentiveItems = () => {
   const getSubCategoriesForCategory = (category) => {
     if (!category) {
       // If no category selected, show all subcategories
-      return [...new Set(items.map(item => item['Sub category']).filter(Boolean))].sort();
+      return [...new Set(items.map(item => item.Sub_category).filter(Boolean))].sort();
     }
     // Filter items by category, then get unique subcategories
     return [...new Set(
       items
         .filter(item => item.Category === category)
-        .map(item => item['Sub category'])
+        .map(item => item.Sub_category)
         .filter(Boolean)
     )].sort();
   };
@@ -140,7 +142,8 @@ const IncentiveItems = () => {
     setSearchTerm(searchParams.get('search') || '');
     setDescriptionSearch(searchParams.get('description') || '');
     const category = searchParams.get('Category') || '';
-    const subCategory = searchParams.get('Sub category') || '';
+    // Handle both Sub_category (new) and Sub category (old) for backward compatibility
+    const subCategory = searchParams.get('Sub_category') || searchParams.get('Sub category') || '';
     
     // Validate that subcategory belongs to the selected category
     let validSubCategory = subCategory;
@@ -154,7 +157,7 @@ const IncentiveItems = () => {
     setFilters({
       Class: searchParams.get('Class') || '',
       Category: category,
-      'Sub category': validSubCategory,
+      Sub_category: validSubCategory,
       Division: searchParams.get('Division') || '',
       minPrice: searchParams.get('minPrice') || '',
       maxPrice: searchParams.get('maxPrice') || '',
@@ -163,11 +166,11 @@ const IncentiveItems = () => {
 
   // Validate subcategory when category changes (handles programmatic changes)
   useEffect(() => {
-    if (filters.Category && filters['Sub category']) {
+    if (filters.Category && filters.Sub_category) {
       const validSubCategories = getSubCategoriesForCategory(filters.Category);
-      if (!validSubCategories.includes(filters['Sub category'])) {
+      if (!validSubCategories.includes(filters.Sub_category)) {
         // Reset subcategory if it doesn't belong to the selected category
-        setFilters(prev => ({ ...prev, 'Sub category': '' }));
+        setFilters(prev => ({ ...prev, Sub_category: '' }));
         setSubCategorySearch('');
       }
     }
@@ -245,7 +248,14 @@ const IncentiveItems = () => {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
+      if (value) {
+        // Backend expects 'Sub category' with space in query string
+        if (key === 'Sub_category') {
+          params.append('Sub category', value);
+        } else {
+          params.append(key, value);
+        }
+      }
     });
     
     if (searchTerm) params.append('search', searchTerm);
@@ -269,7 +279,7 @@ const IncentiveItems = () => {
     setFilters({
       Class: '',
       Category: '',
-      'Sub category': '',
+      Sub_category: '',
       Division: '',
       minPrice: '',
       maxPrice: '',
@@ -299,7 +309,7 @@ const IncentiveItems = () => {
   
   // Handle sub category selection
   const handleSubCategorySelect = (value) => {
-    setFilters({ ...filters, 'Sub category': value });
+    setFilters({ ...filters, Sub_category: value });
     setSubCategorySearch(value || '');
     setShowSubCategoryDropdown(false);
   };
@@ -471,7 +481,7 @@ const IncentiveItems = () => {
                     setFilters({ 
                       ...filters, 
                       Category: newCategory,
-                      'Sub category': '' // Reset subcategory when category changes
+                      Sub_category: '' // Reset subcategory when category changes
                     });
                     setSubCategorySearch('');
                     setShowSubCategoryDropdown(false);
@@ -495,21 +505,21 @@ const IncentiveItems = () => {
                       type="text"
                       placeholder="Search or select sub category..."
                       className="input input-bordered w-full"
-                      value={subCategorySearch || filters['Sub category'] || ''}
+                      value={subCategorySearch || filters.Sub_category || ''}
                       onChange={(e) => {
                         const value = e.target.value;
                         setSubCategorySearch(value);
                         setShowSubCategoryDropdown(true);
                         // Clear filter if input is cleared
                         if (value === '') {
-                          setFilters({ ...filters, 'Sub category': '' });
+                          setFilters({ ...filters, Sub_category: '' });
                         }
                       }}
                       onFocus={() => {
                         setShowSubCategoryDropdown(true);
                         // Show search term or current filter value
-                        if (filters['Sub category']) {
-                          setSubCategorySearch(filters['Sub category']);
+                        if (filters.Sub_category) {
+                          setSubCategorySearch(filters.Sub_category);
                         }
                       }}
                       onBlur={(e) => {
@@ -519,14 +529,14 @@ const IncentiveItems = () => {
                           setTimeout(() => {
                             setShowSubCategoryDropdown(false);
                             // If no selection made, reset search to show selected value
-                            if (filters['Sub category'] && subCategorySearch !== filters['Sub category']) {
+                            if (filters.Sub_category && subCategorySearch !== filters.Sub_category) {
                               setSubCategorySearch('');
                             }
                           }, 200);
                         }
                       }}
                     />
-                    {filters['Sub category'] && (
+                    {filters.Sub_category && (
                       <button
                         className="btn btn-square btn-ghost"
                         onClick={(e) => {
@@ -554,7 +564,7 @@ const IncentiveItems = () => {
                         <div
                           key={subCat}
                           className={`px-4 py-2 cursor-pointer hover:bg-base-200 ${
-                            filters['Sub category'] === subCat ? 'bg-primary text-primary-content' : ''
+                            filters.Sub_category === subCat ? 'bg-primary text-primary-content' : ''
                           }`}
                           onMouseDown={(e) => {
                             e.preventDefault();
@@ -744,7 +754,7 @@ const IncentiveItems = () => {
                     </div>
                   </td>
                   <td>{item.Category || '-'}</td>
-                  <td>{item['Sub category'] || '-'}</td>
+                  <td>{item.Sub_category || '-'}</td>
                   <td>
                     <div className="flex items-center gap-1">
                       <FaDollarSign className="text-success" />
