@@ -41,6 +41,7 @@ export const authSlice = createSlice({
         username: action.payload.username,
         userRole: action.payload.role,
         jwt: action.payload.token,
+        allowedPages: action.payload.allowedPages || [],
       };
       state.user = user;
       localStorage.setItem("user", JSON.stringify(user));

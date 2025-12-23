@@ -15,14 +15,12 @@ const Navbar = () => {
   const [activeSectionId, setActiveSectionId] = useState(null);
 
   const desktopLinks = useMemo(() => {
+    const allowedPages = user?.allowedPages || [];
+    
     return mainPages
       .filter((section) => {
         // Hide Settings for non-admin users
         if (section.text === "Settings" && !isAdmin) {
-          return false;
-        }
-        // Hide Sales for non-admin users (only admins can access sales now)
-        if (section.text === "Sales" && !isAdmin) {
           return false;
         }
         // Hide Pharmacies for non-authenticated users
@@ -31,16 +29,31 @@ const Navbar = () => {
         }
         return true;
       })
-      .map((section) => ({
-        ...section,
-        ping: (section.ping || []).filter((link) => {
-          // Hide Assignments link for non-admin users
-          if (link.linkName === "Assignments" && !isAdmin) {
-            return false;
+      .map((section) => {
+        // Filter links based on user permissions
+        const filteredLinks = (section.ping || []).filter((link) => {
+          // Admins see all links
+          if (isAdmin) {
+            return true;
           }
-          return true;
-        }),
-      }));
+          
+          // Check if user has access to this page
+          // Home page is always accessible
+          if (link.link === "/") {
+            return true;
+          }
+          
+          // Check if link is in allowedPages
+          return allowedPages.includes(link.link);
+        });
+        
+        // Only include section if it has at least one accessible link
+        return {
+          ...section,
+          ping: filteredLinks,
+        };
+      })
+      .filter((section) => section.ping.length > 0); // Remove sections with no accessible links
   }, [isAdmin, isSupervisor, user]);
 
   const activeSection = useMemo(

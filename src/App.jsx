@@ -28,6 +28,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminOrSupervisorRoute from './components/AdminOrSupervisorRoute';
+import PageAccessRoute from './components/PageAccessRoute';
 
 
 // Import loaders and actions directly
@@ -149,81 +150,81 @@ const router = createBrowserRouter([{
     {
       path: "incentive-items",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <IncentiveItemsPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: incentiveItemsLoader,
     },
     {
       path: "insurance-items",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <InsuranceItemsPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: insuranceItemsLoader,
     },
     {
       path: "contests",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <ContestsPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: contestsLoader,
     },
     {
       path: "header-sales",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <HeaderSalesPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: headerSalesLoader,
     },
     {
       path: "header-sales/by-month",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <SalesByMonthPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: salesByMonthLoader,
     },
     {
       path: "cash-sales",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <CashSalesPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: cashSalesLoader,
     },
     {
       path: "insurance",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <InsurancePage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: insuranceLoader,
     },
     {
       path: "wasfaty",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <WasfatyPage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: wasfatyLoader,
     },
     {
       path: "online",
       element: (
-        <AdminRoute>
+        <PageAccessRoute>
           <OnlinePage />
-        </AdminRoute>
+        </PageAccessRoute>
       ),
       loader: onlineLoader,
     },

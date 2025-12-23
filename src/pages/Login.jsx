@@ -52,6 +52,7 @@ const Login = () => {
           username: userData.username,
           role: userData.role,
           token: token,
+          allowedPages: userData.allowedPages || [],
         }));
 
         toast.success(`Welcome back, ${userData.firstName}!`);

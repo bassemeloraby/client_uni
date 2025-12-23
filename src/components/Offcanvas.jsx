@@ -78,24 +78,36 @@ const Offcanvas = ({ isOpen, setIsOpen }) => {
             if (mainPage.text === "Settings" && !isAdmin) {
               return null;
             }
-            // Hide Sales for non-admin users (only admins can access sales now)
-            if (mainPage.text === "Sales" && !isAdmin) {
-              return null;
-            }
             // Hide Pharmacies for non-authenticated users
             if (!user && mainPage.text === "Pharmacies") {
               return null;
             }
-            // Filter sub-links for non-admin users
+            
+            // Filter sub-links based on user permissions
+            const allowedPages = user?.allowedPages || [];
+            const filteredLinks = (mainPage.ping || []).filter((link) => {
+              // Admins see all links
+              if (isAdmin) {
+                return true;
+              }
+              
+              // Home page is always accessible
+              if (link.link === "/") {
+                return true;
+              }
+              
+              // Check if link is in allowedPages
+              return allowedPages.includes(link.link);
+            });
+            
+            // Don't render section if no links are accessible
+            if (filteredLinks.length === 0) {
+              return null;
+            }
+            
             const filteredMainPage = {
               ...mainPage,
-              ping: (mainPage.ping || []).filter((link) => {
-                // Hide Assignments link for non-admin users
-                if (link.linkName === "Assignments" && !isAdmin) {
-                  return false;
-                }
-                return true;
-              }),
+              ping: filteredLinks,
             };
             return (
               <LinkComponent 
