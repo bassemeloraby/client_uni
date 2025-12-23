@@ -13,7 +13,9 @@ import {
   FaSortAmountDown,
   FaRedo,
   FaArrowUp,
-  FaArrowDown
+  FaArrowDown,
+  FaImage,
+  FaExternalLinkAlt
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 
@@ -138,6 +140,14 @@ const Contests = () => {
   const formatPercentage = (value) => {
     if (!value) return '0%';
     return `${value}%`;
+  };
+
+  // Open Google image search
+  const openGoogleImageSearch = (searchTerm) => {
+    if (!searchTerm || searchTerm === '-') return;
+    const encodedTerm = encodeURIComponent(searchTerm);
+    const url = `https://www.google.com/search?tbm=isch&q=${encodedTerm}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // Toggle sort by price (updates URL to trigger backend sorting)
@@ -524,8 +534,17 @@ const Contests = () => {
                     <span className="font-mono">{item.SAP_Code || '-'}</span>
                   </td>
                   <td>
-                    <div className="max-w-xs">
+                    <div className="max-w-xs flex items-center gap-2">
                       <span className="font-semibold">{item['WH Description'] || '-'}</span>
+                      {item['WH Description'] && item['WH Description'] !== '-' && (
+                        <button
+                          onClick={() => openGoogleImageSearch(item['WH Description'])}
+                          className="btn btn-xs btn-ghost btn-circle"
+                          title={`Search Google Images for "${item['WH Description']}"`}
+                        >
+                          <FaImage className="text-primary hover:text-primary-focus" />
+                        </button>
+                      )}
                     </div>
                   </td>
                   <td>{item.Category || '-'}</td>
