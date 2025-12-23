@@ -33,3 +33,6 @@ export { default as CashSalesPage } from "./HeaderSales/CashSales";
 export { default as InsurancePage } from "./HeaderSales/Insurance";
 export { default as WasfatyPage } from "./HeaderSales/Wasfaty";
 export { default as OnlinePage } from "./HeaderSales/Online";
+
+/** Visits */
+export { default as VisitsPage } from "./Visits/Visits";

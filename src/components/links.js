@@ -35,9 +35,12 @@ export const mainPages = [
       { id: nanoid(), linkName: "Wasfaty", link: "/wasfaty" },
     ],
   },  
- {
+ {  
   id: nanoid(),
   text: "Settings",
-  ping: [{ id: nanoid(), linkName: "Users", link: "/users" }],
+  ping: [
+    { id: nanoid(), linkName: "Users", link: "/users" },
+    { id: nanoid(), linkName: "Visits", link: "/visits" },
+  ],
  },
 ];
