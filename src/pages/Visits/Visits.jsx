@@ -6,6 +6,8 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
+  FaAngleDoubleLeft,
+  FaAngleDoubleRight,
   FaUser,
   FaClock,
   FaGlobe,
@@ -18,7 +20,8 @@ import { customFetch } from "../../utils";
 import { toast } from 'react-toastify';
 
 const url = "visits";
-const ITEMS_PER_PAGE = 50;
+const DEFAULT_ITEMS_PER_PAGE = 50;
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100, 200];
 
 export const loader = async ({ request }) => {
   try {
@@ -42,8 +45,9 @@ export const loader = async ({ request }) => {
     
     // Pagination
     const page = parseInt(params.get('page')) || 1;
+    const limit = parseInt(params.get('limit')) || DEFAULT_ITEMS_PER_PAGE;
     queryParams.page = page;
-    queryParams.limit = ITEMS_PER_PAGE;
+    queryParams.limit = limit;
     
     // Sorting
     if (params.get('sortBy')) queryParams.sortBy = params.get('sortBy');
@@ -60,7 +64,8 @@ export const loader = async ({ request }) => {
         visits: response.data.data,
         total: response.data.total || response.data.data.length,
         page: response.data.page || page,
-        pages: response.data.pages || Math.ceil((response.data.total || response.data.data.length) / ITEMS_PER_PAGE),
+        limit: limit,
+        pages: response.data.pages || Math.ceil((response.data.total || response.data.data.length) / limit),
         stats: statsResponse.data.success ? statsResponse.data.data : null,
       };
     }
@@ -84,6 +89,7 @@ export const loader = async ({ request }) => {
       visits: [],
       total: 0,
       page: 1,
+      limit: DEFAULT_ITEMS_PER_PAGE,
       pages: 0,
       stats: null,
       error: error.response?.data?.message || error.message || "Failed to fetch visits",
@@ -92,7 +98,7 @@ export const loader = async ({ request }) => {
 };
 
 const Visits = () => {
-  const { visits, total, page, pages, stats, error } = useLoaderData();
+  const { visits, total, page, limit, pages, stats, error } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -136,8 +142,18 @@ const Visits = () => {
   };
 
   const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pages) return;
     const params = new URLSearchParams(searchParams);
     params.set('page', newPage.toString());
+    setSearchParams(params);
+    // Scroll to top of table
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (newLimit) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('limit', newLimit.toString());
+    params.set('page', '1'); // Reset to first page when changing limit
     setSearchParams(params);
   };
 
@@ -375,48 +391,146 @@ const Visits = () => {
           </div>
 
           {/* Pagination */}
-          {pages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-base-content/70">
-                Showing {((page - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(page * ITEMS_PER_PAGE, total)} of {total} visits
-              </div>
-              <div className="join">
-                <button
-                  className="join-item btn"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  <FaChevronLeft />
-                </button>
-                {Array.from({ length: Math.min(5, pages) }, (_, i) => {
-                  let pageNum;
-                  if (pages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= pages - 2) {
-                    pageNum = pages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      className={`join-item btn ${page === pageNum ? 'btn-active' : ''}`}
-                      onClick={() => handlePageChange(pageNum)}
+          {total > 0 && (
+            <div className="mt-6 space-y-4">
+              {/* Items per page selector and info */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-base-content/70">
+                    Showing <span className="font-semibold">{((page - 1) * limit) + 1}</span> to{' '}
+                    <span className="font-semibold">{Math.min(page * limit, total)}</span> of{' '}
+                    <span className="font-semibold">{total.toLocaleString()}</span> visits
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-base-content/70">Items per page:</label>
+                    <select
+                      className="select select-bordered select-sm"
+                      value={limit}
+                      onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                     >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                <button
-                  className="join-item btn"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === pages}
-                >
-                  <FaChevronRight />
-                </button>
+                      {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
+
+              {/* Pagination controls */}
+              {pages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-base-content/70">
+                    Page <span className="font-semibold">{page}</span> of{' '}
+                    <span className="font-semibold">{pages}</span>
+                  </div>
+                  <div className="join">
+                    {/* First page button */}
+                    <button
+                      className="join-item btn btn-sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={page === 1}
+                      title="First page"
+                    >
+                      <FaAngleDoubleLeft />
+                    </button>
+                    {/* Previous page button */}
+                    <button
+                      className="join-item btn btn-sm"
+                      onClick={() => handlePageChange(page - 1)}
+                      disabled={page === 1}
+                      title="Previous page"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {(() => {
+                      const pageNumbers = [];
+                      const maxVisible = 5;
+                      
+                      if (pages <= maxVisible) {
+                        // Show all pages if total pages <= maxVisible
+                        for (let i = 1; i <= pages; i++) {
+                          pageNumbers.push(i);
+                        }
+                      } else {
+                        // Always show first page
+                        if (page > 3) {
+                          pageNumbers.push(1);
+                          if (page > 4) {
+                            pageNumbers.push('ellipsis-start');
+                          }
+                        }
+                        
+                        // Show pages around current page
+                        let start = Math.max(1, page - 2);
+                        let end = Math.min(pages, page + 2);
+                        
+                        // Adjust if we're near the start
+                        if (page <= 3) {
+                          end = Math.min(maxVisible, pages);
+                        }
+                        // Adjust if we're near the end
+                        if (page >= pages - 2) {
+                          start = Math.max(1, pages - maxVisible + 1);
+                        }
+                        
+                        for (let i = start; i <= end; i++) {
+                          pageNumbers.push(i);
+                        }
+                        
+                        // Always show last page
+                        if (page < pages - 2) {
+                          if (page < pages - 3) {
+                            pageNumbers.push('ellipsis-end');
+                          }
+                          pageNumbers.push(pages);
+                        }
+                      }
+                      
+                      return pageNumbers.map((pageNum, index) => {
+                        if (pageNum === 'ellipsis-start' || pageNum === 'ellipsis-end') {
+                          return (
+                            <button key={`ellipsis-${index}`} className="join-item btn btn-sm btn-disabled" disabled>
+                              ...
+                            </button>
+                          );
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            className={`join-item btn btn-sm ${page === pageNum ? 'btn-active' : ''}`}
+                            onClick={() => handlePageChange(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      });
+                    })()}
+                    
+                    {/* Next page button */}
+                    <button
+                      className="join-item btn btn-sm"
+                      onClick={() => handlePageChange(page + 1)}
+                      disabled={page === pages}
+                      title="Next page"
+                    >
+                      <FaChevronRight />
+                    </button>
+                    {/* Last page button */}
+                    <button
+                      className="join-item btn btn-sm"
+                      onClick={() => handlePageChange(pages)}
+                      disabled={page === pages}
+                      title="Last page"
+                    >
+                      <FaAngleDoubleRight />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
