@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLoaderData, useNavigate, useSearchParams, useNavigation } from 'react-router-dom';
+import { useLoaderData, useNavigate, useSearchParams, useNavigation, useRevalidator } from 'react-router-dom';
 import { 
   FaSearch, 
   FaFilter, 
@@ -37,7 +37,7 @@ export const loader = async ({ request }) => {
     const params = new URL(request.url).searchParams;
     const queryParams = {};
     
-    // Build query string from URL params
+    // Build query string from URL params (ignore _refresh param)
     if (params.get('userId')) queryParams.userId = params.get('userId');
     if (params.get('path')) queryParams.path = params.get('path');
     if (params.get('startDate')) queryParams.startDate = params.get('startDate');
@@ -102,9 +102,10 @@ const Visits = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
+  const revalidator = useRevalidator();
   
   // Check if data is being loaded
-  const isLoading = navigation.state === 'loading';
+  const isLoading = navigation.state === 'loading' || revalidator.state === 'loading';
   
   const [filters, setFilters] = useState({
     userId: searchParams.get('userId') || '',
@@ -114,7 +115,6 @@ const Visits = () => {
   });
   
   const [showFilters, setShowFilters] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -161,15 +161,10 @@ const Visits = () => {
     setSearchParams(params);
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      window.location.reload();
-    } catch (error) {
-      toast.error('Failed to refresh data');
-    } finally {
-      setIsRefreshing(false);
-    }
+  const handleRefresh = () => {
+    // Use React Router's revalidator to refresh data without reloading the page
+    // This will re-run the loader and fetch fresh data, showing loading only in the data area
+    revalidator.revalidate();
   };
 
   const formatDate = (dateString) => {
@@ -199,10 +194,10 @@ const Visits = () => {
         <div className="flex gap-2">
           <button
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={isLoading}
             className="btn btn-primary gap-2"
           >
-            <FaRedo className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <FaRedo className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button
