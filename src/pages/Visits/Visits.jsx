@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLoaderData, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLoaderData, useNavigate, useSearchParams, useNavigation } from 'react-router-dom';
 import { 
   FaSearch, 
   FaFilter, 
@@ -101,6 +101,10 @@ const Visits = () => {
   const { visits, total, page, limit, pages, stats, error } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
+  
+  // Check if data is being loaded
+  const isLoading = navigation.state === 'loading';
   
   const [filters, setFilters] = useState({
     userId: searchParams.get('userId') || '',
@@ -325,7 +329,12 @@ const Visits = () => {
 
       {/* Visits Table */}
       <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
+        <div className="card-body relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-base-100/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <span className="loading loading-ring loading-lg text-primary"></span>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
               <thead>

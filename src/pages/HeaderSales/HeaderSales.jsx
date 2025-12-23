@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLoaderData, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLoaderData, useNavigate, useSearchParams, useNavigation } from 'react-router-dom';
 import { 
   FaSearch, 
   FaFilter, 
@@ -97,6 +97,10 @@ const HeaderSales = () => {
   const { items, total, page, pages, error } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigation = useNavigation();
+  
+  // Check if data is being loaded
+  const isLoading = navigation.state === 'loading';
   
   const currentPage = page || 1;
   const totalPages = pages || Math.ceil(total / ITEMS_PER_PAGE);
@@ -522,9 +526,15 @@ const HeaderSales = () => {
       </div>
 
       {/* Items Table */}
-      {items && items.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="table table-zebra w-full">
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-base-100/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+            <span className="loading loading-ring loading-lg text-primary"></span>
+          </div>
+        )}
+        {items && items.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="table table-zebra w-full">
             <thead>
               <tr>
                 <th>Store Code</th>
@@ -642,22 +652,23 @@ const HeaderSales = () => {
               </tr>
             </tfoot>
           </table>
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-2xl text-base-content/70 mb-4">
-            {hasActiveFilters ? 'No items found matching your filters' : 'No header sales found'}
-          </p>
-          {hasActiveFilters && (
-            <button
-              className="btn btn-outline"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-2xl text-base-content/70 mb-4">
+              {hasActiveFilters ? 'No items found matching your filters' : 'No header sales found'}
+            </p>
+            {hasActiveFilters && (
+              <button
+                className="btn btn-outline"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        )}
+      </div>
       
       {/* Pagination */}
       {totalPages > 1 && (
