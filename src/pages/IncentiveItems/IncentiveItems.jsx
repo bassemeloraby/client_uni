@@ -1053,18 +1053,19 @@ const IncentiveItems = () => {
                   <td>{item.Sub_category || '-'}</td>
                   <td>
                     {item.activeIngredients && item.activeIngredients.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5 max-w-md">
                         {item.activeIngredients.map((ingredient, index) => (
                           <span 
                             key={index}
-                            className="badge badge-primary badge-sm"
+                            className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-primary-content hover:border-primary transition-all duration-200 cursor-default shadow-sm hover:shadow-md hover:scale-105"
+                            title={ingredient}
                           >
                             {ingredient}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-base-content/50">-</span>
+                      <span className="text-base-content/50 italic text-sm">-</span>
                     )}
                   </td>
                   <td>
