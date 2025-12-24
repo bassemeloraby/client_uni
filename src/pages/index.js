@@ -36,3 +36,6 @@ export { default as OnlinePage } from "./HeaderSales/Online";
 
 /** Visits */
 export { default as VisitsPage } from "./Visits/Visits";
+
+/** Baby Joy */
+export { default as BabyJoyPage } from "./BabyJoy/BabyJoy";

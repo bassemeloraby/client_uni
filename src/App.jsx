@@ -22,6 +22,7 @@ import {
   WasfatyPage,
   OnlinePage,
   VisitsPage,
+  BabyJoyPage,
   Landing,
 } from "./pages";
 
@@ -51,6 +52,7 @@ import { loader as insuranceLoader } from "./pages/HeaderSales/Insurance.jsx";
 import { loader as wasfatyLoader } from "./pages/HeaderSales/Wasfaty.jsx";
 import { loader as onlineLoader } from "./pages/HeaderSales/Online.jsx";
 import { loader as visitsLoader } from "./pages/Visits/Visits.jsx";
+import { loader as babyJoyLoader } from "./pages/BabyJoy/BabyJoy.jsx";
 
 const router = createBrowserRouter([{
   path: "/",
@@ -238,6 +240,15 @@ const router = createBrowserRouter([{
         </AdminRoute>
       ),
       loader: visitsLoader,
+    },
+    {
+      path: "baby-joy",
+      element: (
+        <PageAccessRoute>
+          <BabyJoyPage />
+        </PageAccessRoute>
+      ),
+      loader: babyJoyLoader,
     },
   ],
 },
