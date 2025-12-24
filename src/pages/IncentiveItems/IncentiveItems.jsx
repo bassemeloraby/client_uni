@@ -18,7 +18,10 @@ import {
   FaArrowUp,
   FaArrowDown,
   FaFileExcel,
-  FaPrint
+  FaPrint,
+  FaEye,
+  FaEyeSlash,
+  FaColumns
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 import * as XLSX from 'xlsx';
@@ -150,6 +153,9 @@ const IncentiveItems = () => {
   const [showActiveIngredientsDropdown, setShowActiveIngredientsDropdown] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showDivisionColumn, setShowDivisionColumn] = useState(false);
+  const [showCategoryColumn, setShowCategoryColumn] = useState(false);
+  const [showSubCategoryColumn, setShowSubCategoryColumn] = useState(false);
   const [filters, setFilters] = useState({
     Class: searchParams.get('Class') || '',
     Category: searchParams.get('Category') || '',
@@ -948,11 +954,66 @@ const IncentiveItems = () => {
         <div className="text-sm text-base-content/70">
           Showing {startIndex} to {endIndex} of {total} items
         </div>
-        {totalPages > 1 && (
-          <div className="text-sm text-base-content/70">
-            Page {currentPage} of {totalPages}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              className="btn btn-ghost btn-sm gap-2"
+              onClick={() => setShowDivisionColumn(!showDivisionColumn)}
+              title={showDivisionColumn ? 'Hide Division column' : 'Show Division column'}
+            >
+              {showDivisionColumn ? (
+                <>
+                  <FaEyeSlash className="h-4 w-4" />
+                  <span className="hidden sm:inline">Division</span>
+                </>
+              ) : (
+                <>
+                  <FaEye className="h-4 w-4" />
+                  <span className="hidden sm:inline">Division</span>
+                </>
+              )}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm gap-2"
+              onClick={() => setShowCategoryColumn(!showCategoryColumn)}
+              title={showCategoryColumn ? 'Hide Category column' : 'Show Category column'}
+            >
+              {showCategoryColumn ? (
+                <>
+                  <FaEyeSlash className="h-4 w-4" />
+                  <span className="hidden sm:inline">Category</span>
+                </>
+              ) : (
+                <>
+                  <FaEye className="h-4 w-4" />
+                  <span className="hidden sm:inline">Category</span>
+                </>
+              )}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm gap-2"
+              onClick={() => setShowSubCategoryColumn(!showSubCategoryColumn)}
+              title={showSubCategoryColumn ? 'Hide Sub Category column' : 'Show Sub Category column'}
+            >
+              {showSubCategoryColumn ? (
+                <>
+                  <FaEyeSlash className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sub Category</span>
+                </>
+              ) : (
+                <>
+                  <FaEye className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sub Category</span>
+                </>
+              )}
+            </button>
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="text-sm text-base-content/70">
+              Page {currentPage} of {totalPages}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Items Table */}
@@ -969,9 +1030,9 @@ const IncentiveItems = () => {
               <tr>
                 <th>SAP Code</th>
                 <th>Description</th>
-                <th>Division</th>
-                <th>Category</th>
-                <th>Sub Category</th>
+                {showDivisionColumn && <th>Division</th>}
+                {showCategoryColumn && <th>Category</th>}
+                {showSubCategoryColumn && <th>Sub Category</th>}
                 <th>Active Ingredients</th>
                 <th 
                   className="cursor-pointer hover:bg-base-200 select-none"
@@ -1043,14 +1104,20 @@ const IncentiveItems = () => {
                       </div>
                     </div>
                   </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <FaLayerGroup className="text-primary" />
-                      <span className="text-sm">{item.Division || '-'}</span>
-                    </div>
-                  </td>
-                  <td>{item.Category || '-'}</td>
-                  <td>{item.Sub_category || '-'}</td>
+                  {showDivisionColumn && (
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <FaLayerGroup className="text-primary" />
+                        <span className="text-sm">{item.Division || '-'}</span>
+                      </div>
+                    </td>
+                  )}
+                  {showCategoryColumn && (
+                    <td>{item.Category || '-'}</td>
+                  )}
+                  {showSubCategoryColumn && (
+                    <td>{item.Sub_category || '-'}</td>
+                  )}
                   <td>
                     {item.activeIngredients && item.activeIngredients.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5 max-w-md">
@@ -1090,7 +1157,13 @@ const IncentiveItems = () => {
             </tbody>
             <tfoot>
               <tr>
-                <th colSpan="6" className="text-right">Total:</th>
+                <th colSpan={
+                  2 + 
+                  (showDivisionColumn ? 1 : 0) + 
+                  (showCategoryColumn ? 1 : 0) + 
+                  (showSubCategoryColumn ? 1 : 0) + 
+                  1
+                } className="text-right">Total:</th>
                 <th className="text-success">
                   {formatCurrency(items.reduce((sum, item) => sum + (item.Price || 0), 0))}
                 </th>
