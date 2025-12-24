@@ -16,9 +16,12 @@ import {
   FaImage,
   FaExternalLinkAlt,
   FaArrowUp,
-  FaArrowDown
+  FaArrowDown,
+  FaFileExcel,
+  FaPrint
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
+import * as XLSX from 'xlsx';
 
 const url = "incentive-items";
 const ITEMS_PER_PAGE = 50;
@@ -48,6 +51,7 @@ export const loader = async ({ request }) => {
     if (params.get('description')) queryParams.description = params.get('description');
     if (params.get('minPrice')) queryParams.minPrice = params.get('minPrice');
     if (params.get('maxPrice')) queryParams.maxPrice = params.get('maxPrice');
+    if (params.get('activeIngredients')) queryParams.activeIngredients = params.get('activeIngredients');
     if (params.get('sortByIncentiveValue')) queryParams.sortByIncentiveValue = params.get('sortByIncentiveValue');
     if (params.get('sortByPrice')) queryParams.sortByPrice = params.get('sortByPrice');
     
@@ -99,11 +103,40 @@ const IncentiveItems = () => {
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
   
+  // State for all unique active ingredients (fetched separately)
+  const [allUniqueActiveIngredients, setAllUniqueActiveIngredients] = useState([]);
+  
   // Check if data is being loaded
   const isLoading = navigation.state === 'loading';
   
   const currentPage = page || 1;
   const totalPages = pages || Math.ceil(total / ITEMS_PER_PAGE);
+  
+  // Fetch all unique active ingredients on component mount
+  useEffect(() => {
+    const fetchAllActiveIngredients = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!user || !user.jwt) return;
+        
+        // Fetch all items (with high limit) to get all unique active ingredients
+        const response = await customFetch.get(`${url}?limit=10000&page=1`);
+        
+        if (response.data.success && response.data.data) {
+          const allItems = response.data.data;
+          const allIngredients = allItems
+            .flatMap(item => item.activeIngredients || [])
+            .filter(Boolean);
+          const uniqueIngredients = [...new Set(allIngredients)].sort();
+          setAllUniqueActiveIngredients(uniqueIngredients);
+        }
+      } catch (error) {
+        console.error("Error fetching all active ingredients:", error);
+      }
+    };
+    
+    fetchAllActiveIngredients();
+  }, []);
   
   // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -113,6 +146,10 @@ const IncentiveItems = () => {
   const sortByPrice = searchParams.get('sortByPrice') || '';
   const [subCategorySearch, setSubCategorySearch] = useState('');
   const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
+  const [activeIngredientsSearch, setActiveIngredientsSearch] = useState('');
+  const [showActiveIngredientsDropdown, setShowActiveIngredientsDropdown] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [filters, setFilters] = useState({
     Class: searchParams.get('Class') || '',
     Category: searchParams.get('Category') || '',
@@ -120,6 +157,7 @@ const IncentiveItems = () => {
     Division: searchParams.get('Division') || '',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
+    activeIngredients: searchParams.get('activeIngredients') || '',
   });
   
   // Calculate pagination values
@@ -165,6 +203,7 @@ const IncentiveItems = () => {
       Division: searchParams.get('Division') || '',
       minPrice: searchParams.get('minPrice') || '',
       maxPrice: searchParams.get('maxPrice') || '',
+      activeIngredients: searchParams.get('activeIngredients') || '',
     });
   }, [searchParams, items]);
 
@@ -268,6 +307,8 @@ const IncentiveItems = () => {
     
     setShowSubCategoryDropdown(false);
     setSubCategorySearch('');
+    setShowActiveIngredientsDropdown(false);
+    setActiveIngredientsSearch('');
     navigate(`/incentive-items?${params.toString()}`);
   };
   
@@ -287,11 +328,14 @@ const IncentiveItems = () => {
       Division: '',
       minPrice: '',
       maxPrice: '',
+      activeIngredients: '',
     });
     setSearchTerm('');
     setDescriptionSearch('');
     setSubCategorySearch('');
     setShowSubCategoryDropdown(false);
+    setActiveIngredientsSearch('');
+    setShowActiveIngredientsDropdown(false);
     navigate('/incentive-items');
   };
 
@@ -311,11 +355,125 @@ const IncentiveItems = () => {
     subCat.toLowerCase().includes(subCategorySearch.toLowerCase())
   );
   
+  // Use all unique active ingredients from the fetched data, fallback to current page items
+  const uniqueActiveIngredients = allUniqueActiveIngredients.length > 0 
+    ? allUniqueActiveIngredients 
+    : [...new Set(items.flatMap(item => item.activeIngredients || []).filter(Boolean))].sort();
+  
+  // Get selected active ingredients as array
+  const selectedActiveIngredients = filters.activeIngredients
+    ? filters.activeIngredients.split(',').map(ing => ing.trim()).filter(Boolean)
+    : [];
+  
+  // Filter active ingredients based on search
+  const filteredActiveIngredients = uniqueActiveIngredients.filter(ing =>
+    ing.toLowerCase().includes(activeIngredientsSearch.toLowerCase()) &&
+    !selectedActiveIngredients.includes(ing)
+  );
+  
   // Handle sub category selection
   const handleSubCategorySelect = (value) => {
     setFilters({ ...filters, Sub_category: value });
     setSubCategorySearch(value || '');
     setShowSubCategoryDropdown(false);
+  };
+  
+  // Handle active ingredient selection (add to list)
+  const handleActiveIngredientSelect = (ingredient) => {
+    const currentIngredients = selectedActiveIngredients;
+    if (!currentIngredients.includes(ingredient)) {
+      const updatedIngredients = [...currentIngredients, ingredient];
+      setFilters({ ...filters, activeIngredients: updatedIngredients.join(', ') });
+    }
+    setActiveIngredientsSearch('');
+    setShowActiveIngredientsDropdown(false);
+  };
+  
+  // Handle active ingredient removal
+  const handleActiveIngredientRemove = (ingredient) => {
+    const updatedIngredients = selectedActiveIngredients.filter(ing => ing !== ingredient);
+    setFilters({ 
+      ...filters, 
+      activeIngredients: updatedIngredients.length > 0 ? updatedIngredients.join(', ') : '' 
+    });
+  };
+  
+  // Clear all active ingredients
+  const handleClearActiveIngredients = () => {
+    setFilters({ ...filters, activeIngredients: '' });
+    setActiveIngredientsSearch('');
+    setShowActiveIngredientsDropdown(false);
+  };
+
+  // Export to Excel
+  const exportToExcel = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportDropdown(false);
+
+      // Build query params from current filters
+      const params = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === 'minPrice' || key === 'maxPrice') {
+          if (value !== '' && value !== null && value !== undefined) {
+            params.append(key, value);
+          }
+        } else if (key === 'Sub_category') {
+          if (value) params.append('Sub category', value);
+        } else if (value) {
+          params.append(key, value);
+        }
+      });
+      
+      if (searchTerm) params.append('search', searchTerm);
+      if (descriptionSearch) params.append('description', descriptionSearch);
+      if (sortByIncentiveValue) params.append('sortByIncentiveValue', sortByIncentiveValue);
+      if (sortByPrice) params.append('sortByPrice', sortByPrice);
+      
+      // Fetch all data (no pagination limit)
+      params.append('limit', '10000');
+      params.append('page', '1');
+
+      const queryString = params.toString();
+      const response = await customFetch.get(`${url}${queryString ? `?${queryString}` : ''}`);
+      
+      if (response.data.success) {
+        const allItems = response.data.data;
+        
+        // Prepare data for Excel
+        const excelData = allItems.map(item => ({
+          'SAP Code': item.SAP_Code || '',
+          'Description': item.Description || '',
+          'Division': item.Division || '',
+          'Category': item.Category || '',
+          'Sub Category': item.Sub_category || '',
+          'Active Ingredients': item.activeIngredients && item.activeIngredients.length > 0 
+            ? item.activeIngredients.join(', ') 
+            : '',
+          'Price': item.Price || 0,
+          'Incentive %': item.IncentivePercentage ? (item.IncentivePercentage * 100).toFixed(2) + '%' : '',
+          'Incentive Value': item.incentive_value || 0,
+        }));
+
+        // Create workbook and worksheet
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Incentive Items');
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `IncentiveItems_Export_${timestamp}.xlsx`;
+
+        // Write file
+        XLSX.writeFile(wb, filename);
+      }
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export data to Excel. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (error) {
@@ -358,13 +516,38 @@ const IncentiveItems = () => {
             <FaFilter className="h-5 w-5" />
             Filters
           </button>
-          <button
-            className="btn btn-outline gap-2"
-            onClick={() => window.print()}
-          >
-            <FaDownload className="h-5 w-5" />
-            Export
-          </button>
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-outline gap-2"
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+            >
+              <FaDownload className="h-5 w-5" />
+              Export
+              {isExporting && <span className="loading loading-spinner loading-sm"></span>}
+            </div>
+            {showExportDropdown && (
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+                onBlur={() => setTimeout(() => setShowExportDropdown(false), 200)}
+              >
+                <li>
+                  <a onClick={exportToExcel} className="gap-2">
+                    <FaFileExcel className="h-4 w-4 text-green-600" />
+                    Export to Excel
+                  </a>
+                </li>
+                <li>
+                  <a onClick={() => { window.print(); setShowExportDropdown(false); }} className="gap-2">
+                    <FaPrint className="h-4 w-4" />
+                    Print
+                  </a>
+                </li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
@@ -378,7 +561,7 @@ const IncentiveItems = () => {
           <div className="input-group">
             <input
               type="text"
-              placeholder="Search by category, SAP code..."
+              placeholder="Search by category, SAP code, active ingredients..."
               className="input input-bordered w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -636,6 +819,108 @@ const IncentiveItems = () => {
                   onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
                 />
               </div>
+
+              {/* Active Ingredients - Searchable Multi-Select */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Active Ingredients</span>
+                </label>
+                <div className="relative">
+                  {/* Selected Ingredients Badges */}
+                  {selectedActiveIngredients.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedActiveIngredients.map(ingredient => (
+                        <div
+                          key={ingredient}
+                          className="badge badge-primary badge-lg gap-2"
+                        >
+                          <span>{ingredient}</span>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs btn-circle p-0 h-4 w-4 min-h-0"
+                            onClick={() => handleActiveIngredientRemove(ingredient)}
+                            title={`Remove ${ingredient}`}
+                          >
+                            <FaTimes className="h-2 w-2" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      placeholder="Search or select active ingredients..."
+                      className="input input-bordered w-full"
+                      value={activeIngredientsSearch}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setActiveIngredientsSearch(value);
+                        setShowActiveIngredientsDropdown(true);
+                      }}
+                      onFocus={() => {
+                        setShowActiveIngredientsDropdown(true);
+                      }}
+                      onBlur={(e) => {
+                        // Only close if not clicking on dropdown
+                        const relatedTarget = e.relatedTarget;
+                        if (!relatedTarget || !relatedTarget.closest('.active-ingredients-dropdown')) {
+                          setTimeout(() => {
+                            setShowActiveIngredientsDropdown(false);
+                            setActiveIngredientsSearch('');
+                          }, 200);
+                        }
+                      }}
+                    />
+                    {selectedActiveIngredients.length > 0 && (
+                      <button
+                        className="btn btn-square btn-ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleClearActiveIngredients();
+                        }}
+                        title="Clear all selected ingredients"
+                      >
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {showActiveIngredientsDropdown && (
+                    <div className="active-ingredients-dropdown absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredActiveIngredients.length > 0 ? (
+                        filteredActiveIngredients.map(ingredient => (
+                          <div
+                            key={ingredient}
+                            className="px-4 py-2 cursor-pointer hover:bg-base-200"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleActiveIngredientSelect(ingredient);
+                            }}
+                          >
+                            <span className="text-sm">{ingredient}</span>
+                          </div>
+                        ))
+                      ) : uniqueActiveIngredients.length === 0 ? (
+                        <div className="px-4 py-2 text-sm text-base-content/70">
+                          No active ingredients found in database
+                        </div>
+                      ) : (
+                        <div className="px-4 py-2 text-sm text-base-content/70">
+                          {activeIngredientsSearch ? `No ingredients found matching "${activeIngredientsSearch}"` : 'All ingredients are already selected'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <label className="label">
+                  <span className="label-text-alt text-base-content/60">
+                    Select multiple ingredients to filter
+                  </span>
+                </label>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-4">
@@ -687,6 +972,7 @@ const IncentiveItems = () => {
                 <th>Division</th>
                 <th>Category</th>
                 <th>Sub Category</th>
+                <th>Active Ingredients</th>
                 <th 
                   className="cursor-pointer hover:bg-base-200 select-none"
                   onClick={handleSortByPrice}
@@ -766,6 +1052,22 @@ const IncentiveItems = () => {
                   <td>{item.Category || '-'}</td>
                   <td>{item.Sub_category || '-'}</td>
                   <td>
+                    {item.activeIngredients && item.activeIngredients.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {item.activeIngredients.map((ingredient, index) => (
+                          <span 
+                            key={index}
+                            className="badge badge-primary badge-sm"
+                          >
+                            {ingredient}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-base-content/50">-</span>
+                    )}
+                  </td>
+                  <td>
                     <div className="flex items-center gap-1">
                       <FaDollarSign className="text-success" />
                       <span className="font-semibold">{formatCurrency(item.Price)}</span>
@@ -787,7 +1089,7 @@ const IncentiveItems = () => {
             </tbody>
             <tfoot>
               <tr>
-                <th colSpan="5" className="text-right">Total:</th>
+                <th colSpan="6" className="text-right">Total:</th>
                 <th className="text-success">
                   {formatCurrency(items.reduce((sum, item) => sum + (item.Price || 0), 0))}
                 </th>

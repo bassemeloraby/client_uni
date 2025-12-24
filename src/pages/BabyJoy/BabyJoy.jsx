@@ -11,9 +11,12 @@ import {
   FaBox,
   FaRedo,
   FaArrowUp,
-  FaArrowDown
+  FaArrowDown,
+  FaFileExcel,
+  FaPrint
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
+import * as XLSX from 'xlsx';
 
 const url = "baby-joy";
 const ITEMS_PER_PAGE = 50;
@@ -114,6 +117,8 @@ const BabyJoy = () => {
   const [formSearch, setFormSearch] = useState('');
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [showFormDropdown, setShowFormDropdown] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [filters, setFilters] = useState({
     Material: searchParams.get('Material') || '',
     Brand: searchParams.get('Brand') || '',
@@ -234,6 +239,70 @@ const BabyJoy = () => {
     setFormSearch(value || '');
     setShowFormDropdown(false);
   };
+
+  // Export to Excel
+  const exportToExcel = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportDropdown(false);
+
+      // Build query params from current filters
+      const params = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === 'minPrice' || key === 'maxPrice') {
+          if (value !== '' && value !== null && value !== undefined) {
+            params.append(key, value);
+          }
+        } else if (value) {
+          params.append(key, value);
+        }
+      });
+      
+      if (searchTerm) params.append('search', searchTerm);
+      if (descriptionSearch) params.append('description', descriptionSearch);
+      
+      // Fetch all data (no pagination limit)
+      params.append('limit', '10000'); // Large limit to get all data
+      params.append('page', '1');
+
+      const queryString = params.toString();
+      const response = await customFetch.get(`${url}${queryString ? `?${queryString}` : ''}`);
+      
+      if (response.data.success) {
+        const allItems = response.data.data;
+        
+        // Prepare data for Excel
+        const excelData = allItems.map(item => ({
+          'Material': item.Material || '',
+          'SAP Description': item.SapDescription || '',
+          'Brand': item.Brand || '',
+          'Material Detail': item.MaterialDetail || '',
+          'Form': item.Form || '',
+          'Units in Cartoon': item.UnitsInCartoon || '',
+          'Price': item.Price || 0,
+          'Number of Backet': item.NumberOfBacket || '',
+        }));
+
+        // Create workbook and worksheet
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Baby Joy Items');
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `BabyJoy_Export_${timestamp}.xlsx`;
+
+        // Write file
+        XLSX.writeFile(wb, filename);
+      }
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export data to Excel. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
   
   // Update state when URL params change
   useEffect(() => {
@@ -293,13 +362,38 @@ const BabyJoy = () => {
             <FaFilter className="h-5 w-5" />
             Filters
           </button>
-          <button
-            className="btn btn-outline gap-2"
-            onClick={() => window.print()}
-          >
-            <FaDownload className="h-5 w-5" />
-            Export
-          </button>
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-outline gap-2"
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+            >
+              <FaDownload className="h-5 w-5" />
+              Export
+              {isExporting && <span className="loading loading-spinner loading-sm"></span>}
+            </div>
+            {showExportDropdown && (
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+                onBlur={() => setTimeout(() => setShowExportDropdown(false), 200)}
+              >
+                <li>
+                  <a onClick={exportToExcel} className="gap-2">
+                    <FaFileExcel className="h-4 w-4 text-green-600" />
+                    Export to Excel
+                  </a>
+                </li>
+                <li>
+                  <a onClick={() => { window.print(); setShowExportDropdown(false); }} className="gap-2">
+                    <FaPrint className="h-4 w-4" />
+                    Print
+                  </a>
+                </li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
