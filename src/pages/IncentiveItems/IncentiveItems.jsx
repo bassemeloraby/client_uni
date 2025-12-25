@@ -106,8 +106,12 @@ const IncentiveItems = () => {
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
   
-  // State for all unique active ingredients (fetched separately)
+  // State for all unique values (fetched separately from entire dataset)
   const [allUniqueActiveIngredients, setAllUniqueActiveIngredients] = useState([]);
+  const [allUniqueClasses, setAllUniqueClasses] = useState([]);
+  const [allUniqueCategories, setAllUniqueCategories] = useState([]);
+  const [allUniqueDivisions, setAllUniqueDivisions] = useState([]);
+  const [allItemsForFilters, setAllItemsForFilters] = useState([]);
   
   // Check if data is being loaded
   const isLoading = navigation.state === 'loading';
@@ -115,30 +119,47 @@ const IncentiveItems = () => {
   const currentPage = page || 1;
   const totalPages = pages || Math.ceil(total / ITEMS_PER_PAGE);
   
-  // Fetch all unique active ingredients on component mount
+  // Fetch all unique values (active ingredients, classes, categories, divisions) on component mount
   useEffect(() => {
-    const fetchAllActiveIngredients = async () => {
+    const fetchAllUniqueValues = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user") || "null");
         if (!user || !user.jwt) return;
         
-        // Fetch all items (with high limit) to get all unique active ingredients
+        // Fetch all items (with high limit) to get all unique values
         const response = await customFetch.get(`${url}?limit=10000&page=1`);
         
         if (response.data.success && response.data.data) {
           const allItems = response.data.data;
+          
+          // Store all items for subcategory filtering
+          setAllItemsForFilters(allItems);
+          
+          // Extract all unique active ingredients
           const allIngredients = allItems
             .flatMap(item => item.activeIngredients || [])
             .filter(Boolean);
           const uniqueIngredients = [...new Set(allIngredients)].sort();
           setAllUniqueActiveIngredients(uniqueIngredients);
+          
+          // Extract all unique classes
+          const uniqueClasses = [...new Set(allItems.map(item => item.Class).filter(Boolean))].sort();
+          setAllUniqueClasses(uniqueClasses);
+          
+          // Extract all unique categories
+          const uniqueCategories = [...new Set(allItems.map(item => item.Category).filter(Boolean))].sort();
+          setAllUniqueCategories(uniqueCategories);
+          
+          // Extract all unique divisions
+          const uniqueDivisions = [...new Set(allItems.map(item => item.Division).filter(Boolean))].sort();
+          setAllUniqueDivisions(uniqueDivisions);
         }
       } catch (error) {
-        console.error("Error fetching all active ingredients:", error);
+        console.error("Error fetching all unique values:", error);
       }
     };
     
-    fetchAllActiveIngredients();
+    fetchAllUniqueValues();
   }, []);
   
   // Initialize state from URL params
@@ -172,13 +193,16 @@ const IncentiveItems = () => {
 
   // Helper function to get subcategories for a category
   const getSubCategoriesForCategory = (category) => {
+    // Use all items from dataset if available, otherwise fallback to current page items
+    const itemsToUse = allItemsForFilters.length > 0 ? allItemsForFilters : items;
+    
     if (!category) {
       // If no category selected, show all subcategories
-      return [...new Set(items.map(item => item.Sub_category).filter(Boolean))].sort();
+      return [...new Set(itemsToUse.map(item => item.Sub_category).filter(Boolean))].sort();
     }
     // Filter items by category, then get unique subcategories
     return [...new Set(
-      items
+      itemsToUse
         .filter(item => item.Category === category)
         .map(item => item.Sub_category)
         .filter(Boolean)
@@ -348,10 +372,16 @@ const IncentiveItems = () => {
   // Check if any filters are active
   const hasActiveFilters = Object.values(filters).some(val => val) || searchTerm || descriptionSearch;
 
-  // Get unique values for filter dropdowns
-  const uniqueClasses = [...new Set(items.map(item => item.Class).filter(Boolean))].sort();
-  const uniqueCategories = [...new Set(items.map(item => item.Category).filter(Boolean))].sort();
-  const uniqueDivisions = [...new Set(items.map(item => item.Division).filter(Boolean))].sort();
+  // Get unique values for filter dropdowns (use fetched values, fallback to current page items)
+  const uniqueClasses = allUniqueClasses.length > 0 
+    ? allUniqueClasses 
+    : [...new Set(items.map(item => item.Class).filter(Boolean))].sort();
+  const uniqueCategories = allUniqueCategories.length > 0 
+    ? allUniqueCategories 
+    : [...new Set(items.map(item => item.Category).filter(Boolean))].sort();
+  const uniqueDivisions = allUniqueDivisions.length > 0 
+    ? allUniqueDivisions 
+    : [...new Set(items.map(item => item.Division).filter(Boolean))].sort();
   
   // Get subcategories filtered by selected category
   const uniqueSubCategories = getSubCategoriesForCategory(filters.Category);
