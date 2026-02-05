@@ -2,12 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 
 const themes = {
-  winter: "winter",
-  dracula: "dracula",
+  nightvision: "nightvision",
+  ocean: "ocean",
 };
 
 const getThemeFromLocalStorage = () => {
-  const theme = localStorage.getItem("theme") || themes.winter;
+  const theme = localStorage.getItem("theme") || themes.nightvision;
   document.documentElement.setAttribute("data-theme", theme);
   return theme;
 };
@@ -31,8 +31,8 @@ export const authSlice = createSlice({
   initialState,
   reducers: {
     toggleTheme: (state) => {
-      const { dracula, winter } = themes;
-      state.theme = state.theme === dracula ? winter : dracula;
+      const { ocean, nightvision } = themes;
+      state.theme = state.theme === ocean ? nightvision : ocean;
       document.documentElement.setAttribute("data-theme", state.theme);
       localStorage.setItem("theme", state.theme);
     },
