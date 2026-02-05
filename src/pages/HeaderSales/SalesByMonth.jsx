@@ -334,7 +334,7 @@ const SalesByMonth = () => {
                 <th>Year</th>
                 <th>Month</th>
                 <th>Number of Invoices</th>
-                <th>Total Amount After Discount</th>
+                <th>Total Amount After Discount (SAR)</th>
               </tr>
             </thead>
             <tbody>

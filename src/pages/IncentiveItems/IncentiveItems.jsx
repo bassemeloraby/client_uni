@@ -1070,7 +1070,7 @@ const IncentiveItems = () => {
                   title="Click to sort by Price"
                 >
                   <div className="flex items-center gap-2">
-                    <span>Price</span>
+                    <span>Price (SAR)</span>
                     <div className="flex flex-col">
                       {sortByPrice === 'asc' ? (
                         <FaArrowUp className="text-primary text-xs" />

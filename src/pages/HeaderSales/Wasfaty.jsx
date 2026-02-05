@@ -340,9 +340,9 @@ const Wasfaty = () => {
               <tr>
                 <th>Year</th>
                 <th>Month</th>
-                <th>Wasfaty</th>
-                <th>Return Wasfaty</th>
-                <th>Total</th>
+                <th>Wasfaty (SAR)</th>
+                <th>Return Wasfaty (SAR)</th>
+                <th>Total (SAR)</th>
               </tr>
             </thead>
             <tbody>

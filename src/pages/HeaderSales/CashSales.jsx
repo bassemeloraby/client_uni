@@ -306,12 +306,12 @@ const CashSales = () => {
                   <Tooltip content={<CustomTooltip />} />
                   <Legend 
                     wrapperStyle={{ paddingTop: '20px' }}
-                    formatter={(value) => <span className="text-base-content">Total Amount</span>}
+                    formatter={(value) => <span className="text-base-content">Total Amount (SAR)</span>}
                   />
                   <Bar 
                     dataKey="amount" 
                     radius={[8, 8, 0, 0]}
-                    name="Total Amount"
+                    name="Total Amount (SAR)"
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -332,7 +332,7 @@ const CashSales = () => {
               <tr>
                 <th>Year</th>
                 <th>Month</th>
-                <th>Total</th>
+                <th>Total (SAR)</th>
               </tr>
             </thead>
             <tbody>

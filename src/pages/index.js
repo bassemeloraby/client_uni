@@ -39,3 +39,4 @@ export { default as VisitsPage } from "./Visits/Visits";
 
 /** Baby Joy */
 export { default as BabyJoyPage } from "./BabyJoy/BabyJoy";
+export { default as EditBabyJoy } from "./BabyJoy/EditBabyJoy";

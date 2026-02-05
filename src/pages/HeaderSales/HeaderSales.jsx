@@ -573,7 +573,7 @@ const HeaderSales = () => {
                   title="Click to sort by Amount"
                 >
                   <div className="flex items-center gap-2">
-                    <span>Total Amount</span>
+                    <span>Total Amount (SAR)</span>
                     <div className="flex flex-col">
                       {sortByAmount === 'asc' ? (
                         <FaArrowUp className="text-primary text-xs" />

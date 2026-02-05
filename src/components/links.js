@@ -8,7 +8,7 @@ export const mainPages = [
   },
   {
     id: nanoid(),
-    text: "Special items",
+    text: "Items lists",
     ping: [
       { id: nanoid(), linkName: "Incentive", link: "/incentive-items" },
       { id: nanoid(), linkName: "Contest", link: "/contests" },

@@ -7,13 +7,13 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
-  FaDollarSign,
   FaBox,
   FaRedo,
   FaArrowUp,
   FaArrowDown,
   FaFileExcel,
-  FaPrint
+  FaPrint,
+  FaEdit
 } from 'react-icons/fa';
 import { customFetch } from "../../utils";
 import * as XLSX from 'xlsx';
@@ -770,7 +770,7 @@ const BabyJoy = () => {
                   title="Click to sort by Price"
                 >
                   <div className="flex items-center gap-2">
-                    <span>Price</span>
+                    <span>Price (SAR)</span>
                     <div className="flex flex-col">
                       {sortByPrice === 'asc' ? (
                         <FaArrowUp className="text-primary text-xs" />
@@ -786,6 +786,7 @@ const BabyJoy = () => {
                   </div>
                 </th>
                 <th>Number of Backet</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -812,11 +813,21 @@ const BabyJoy = () => {
                   <td>{item.UnitsInCartoon || '-'}</td>
                   <td>
                     <div className="flex items-center gap-1">
-                      <FaDollarSign className="text-success" />
+                      <span className="text-success font-bold text-lg">SR</span>
                       <span className="font-semibold">{formatCurrency(item.Price)}</span>
                     </div>
                   </td>
                   <td>{item.NumberOfBacket || '-'}</td>
+                  <td>
+                    <button
+                      onClick={() => navigate(`/baby-joy/${item._id}/edit`)}
+                      className="btn btn-sm btn-ghost gap-2 text-info hover:text-info-focus"
+                      title="Edit baby joy item"
+                    >
+                      <FaEdit className="text-lg" />
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -826,7 +837,7 @@ const BabyJoy = () => {
                 <th className="text-success">
                   {formatCurrency(items.reduce((sum, item) => sum + (item.Price || 0), 0))}
                 </th>
-                <th colSpan="1"></th>
+                <th colSpan="2"></th>
               </tr>
             </tfoot>
           </table>

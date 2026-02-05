@@ -367,9 +367,9 @@ const Online = () => {
               <tr>
                 <th>Year</th>
                 <th>Month</th>
-                <th>Online</th>
-                <th>Return Online</th>
-                <th>Total Online</th>
+                <th>Online (SAR)</th>
+                <th>Return Online (SAR)</th>
+                <th>Total Online (SAR)</th>
               </tr>
             </thead>
             <tbody>

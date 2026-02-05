@@ -336,9 +336,9 @@ const Insurance = () => {
                 <th>Year</th>
                 <th>Month</th>
                 {insuranceInvoiceTypes.map(type => (
-                  <th key={type}>{type}</th>
+                  <th key={type}>{type} (SAR)</th>
                 ))}
-                <th>Total</th>
+                <th>Total (SAR)</th>
               </tr>
             </thead>
             <tbody>
